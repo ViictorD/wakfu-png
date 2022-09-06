@@ -1,0 +1,39 @@
+
+name: Release
+
+on:
+  release:
+    types: [created]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+      - uses: crazy-max/ghaction-upx@v1
+        with:
+          version: latest
+          files: |
+            ./target/release/vakfu.exe
+          args: -fq
+      - name: Upload the artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/vakfu.exe
+          asset_name: vakfu.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
