@@ -16,3 +16,6 @@ image = "0.24.3"
 version = "0.6"
 default-features = false
 features = [ "deflate" ]
+
+[profile.dev.package.image]
+opt-level = 3

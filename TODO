@@ -1,3 +1,6 @@
-- Make the program run on GPU ?
+--- Feature ---
 - Extract paper files
 - Extract interactible (zapp, workshop...) ?
+
+--- Bug ---
+- Some maps (ex: 368) have a too large width or height and fail to allocate the memory
