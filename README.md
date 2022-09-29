@@ -4,16 +4,16 @@ Wakfu map exporter as png
 ![Imgur](https://i.imgur.com/mhPcpS5.png)
 
 
-# building
+# Building
 
 This project requires [cargo](https://crates.io) to build.
 
 Once everything is in place:
 ```bash
-cargo build
+cargo build --release
 ```
 
-# using
+# Using
 
 
 ```bash
@@ -24,4 +24,4 @@ Note that this project does not include **any** authored assets. In order to run
 
 # Credit
 
-Based on @jac3km4 `vakfu` projet.
+Based initially on @jac3km4 `vakfu` projet.
