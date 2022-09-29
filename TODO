@@ -1,6 +1,10 @@
 --- Feature ---
+- Add Interactible ✓
+- Add Dynamic ✓
+- Extract particle
+- Add PNJ's
 - Extract paper files
-- Extract interactible (zapp, workshop...) ?
 
 --- Bug ---
+- Some sprite do not render on the correct order when they are in the same coord
 - Some maps (ex: 368) have a too large width or height and fail to allocate the memory

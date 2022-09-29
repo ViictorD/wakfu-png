@@ -1,8 +1,7 @@
 # Wakfu
 Wakfu map exporter as png
 
-![Imgur](https://i.imgur.com/ztaxtzm.jpg)
-![Imgur](https://i.imgur.com/eo1nExI.jpg)
+![Imgur](https://i.imgur.com/mhPcpS5.png)
 
 
 # building

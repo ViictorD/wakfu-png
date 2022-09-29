@@ -12,6 +12,8 @@ pub mod element;
 pub mod frames;
 pub mod sprite;
 pub mod color;
+pub mod environment;
+pub mod binar_serial_part;
 
 pub const CELL_WIDTH: f32 = 86.;
 pub const CELL_HEIGHT: f32 = 43.;
@@ -19,41 +21,41 @@ const ELEVATION_UNIT: f32 = 10.;
 
 #[derive(Debug)]
 pub struct Map {
-    chunks: Vec<MapChunk>,
+	chunks: Vec<MapChunk>,
 }
 
 impl Map {
-    pub fn load<R: Read + Seek>(input: R) -> Result<Map> {
-        let mut archive = zip::ZipArchive::new(input)?;
-        let mut chunks = Vec::with_capacity(archive.len());
+	pub fn load<R: Read + Seek>(input: R) -> Result<Map> {
+		let mut archive = zip::ZipArchive::new(input)?;
+		let mut chunks = Vec::with_capacity(archive.len());
 
-        for i in 0..archive.len() {
-            let mut file = archive.by_index(i)?;
-            if file
-                .name()
-                .trim_matches(|c| char::is_numeric(c) || c == '-')
-                == "_"
-            {
-                let mut buffer = Vec::with_capacity(file.size() as usize);
-                file.read_to_end(&mut buffer)?;
-                let chunk = buffer
-                    .read(&mut 0)
-                    .map_err(|err| anyhow!("Read error: {:?}", err))?;
-                chunks.push(chunk);
-            }
-        }
-        Ok(Map { chunks })
-    }
+		for i in 0..archive.len() {
+			let mut file = archive.by_index(i)?;
+			if file
+				.name()
+				.trim_matches(|c| char::is_numeric(c) || c == '-')
+				== "_"
+			{
+				let mut buffer = Vec::with_capacity(file.size() as usize);
+				file.read_to_end(&mut buffer)?;
+				let chunk = buffer
+					.read(&mut 0)
+					.map_err(|err| anyhow!("Read error: {:?}", err))?;
+				chunks.push(chunk);
+			}
+		}
+		Ok(Map { chunks })
+	}
 
-    #[inline]
-    pub fn chunks(&self) -> &[MapChunk] {
-        &self.chunks
-    }
+	#[inline]
+	pub fn chunks(&self) -> &[MapChunk] {
+		&self.chunks
+	}
 }
 
 #[inline]
 pub fn iso_to_screen(vec: IVec2, height: i32) -> Vec2 {
-    let x = (vec.x - vec.y) as f32 * CELL_WIDTH / 2.;
-    let y = -(vec.x + vec.y) as f32 * CELL_HEIGHT / 2. + height as f32 * ELEVATION_UNIT;
-    Vec2::new(x, y)
+	let x = (vec.x - vec.y) as f32 * CELL_WIDTH / 2.;
+	let y = -(vec.x + vec.y) as f32 * CELL_HEIGHT / 2. + height as f32 * ELEVATION_UNIT;
+	Vec2::new(x, y)
 }

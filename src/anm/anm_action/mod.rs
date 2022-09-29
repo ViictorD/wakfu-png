@@ -1,0 +1,11 @@
+pub mod anm_action;
+pub mod anm_action_go_to_animation;
+pub mod anm_action_go_to_static_animation;
+pub mod anm_action_run_script;
+pub mod anm_action_go_to_random_animation;
+pub mod anm_action_hit;
+pub mod anm_action_delete;
+pub mod anm_action_end;
+pub mod anm_action_go_to_if_previous_animation;
+pub mod anm_action_add_particle;
+pub mod anm_action_set_radius;
