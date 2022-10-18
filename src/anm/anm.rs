@@ -220,7 +220,26 @@ impl AnimIndex {
 	}
 	
 	pub fn get_animation_file_record(&self, anim_name: &String) -> &AnmAnimationFileRecord {
-		self.animation_file_records_by_name.get(anim_name).unwrap()
+		if let Some(file_record) = self.animation_file_records_by_name.get(anim_name) {
+			return file_record;
+		}
+
+		let splited_anm_name = anim_name.split("_").collect::<Vec<&str>>();
+		if splited_anm_name.len() > 1 {
+			let name_without_state = format!("{}_{}", splited_anm_name.get(0).unwrap(), splited_anm_name.get(1).unwrap());
+			if let Some(file_record) = self.animation_file_records_by_name.get(&name_without_state) {
+				return file_record;
+			}
+		}
+
+		for name in self.animation_file_records_by_name.keys() {
+			if name.contains("AnimStatique") {
+				if let Some(file_record) = self.animation_file_records_by_name.get(name) {
+					return file_record;
+				}
+			}
+		}
+		panic!("Anmimation file record not found");
 	}
 }
 

@@ -40,6 +40,27 @@ impl DynamicSprite {
 }
 
 #[derive(Debug)]
+pub struct ParticleSprite {
+	pub system_id: i32,
+	pub level: i8,
+	pub offset_x: i8,
+	pub offset_y: i8,
+	pub offset_z: i8
+}
+
+impl ParticleSprite {
+	pub fn new(system_id: i32, level: i8, offset_x: i8, offset_y: i8, offset_z: i8) -> Self {
+		ParticleSprite {
+			system_id,
+			level,
+			offset_x,
+			offset_y,
+			offset_z
+		}
+	}
+}
+
+#[derive(Debug)]
 pub struct MapSprite {
 	pub cell_x: i32,
 	pub cell_y: i32,
@@ -53,7 +74,8 @@ pub struct MapSprite {
 	pub layer: u8,
 	pub color: Color,
 	pub anm_sprite: Option<AnmSprite>,
-	pub dyn_sprite: Option<DynamicSprite>
+	pub dyn_sprite: Option<DynamicSprite>,
+	pub particle_sprite: Option<ParticleSprite>
 }
 
 impl MapSprite {

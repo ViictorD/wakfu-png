@@ -17,7 +17,7 @@ pub mod binar_serial_part;
 
 pub const CELL_WIDTH: f32 = 86.;
 pub const CELL_HEIGHT: f32 = 43.;
-const ELEVATION_UNIT: f32 = 10.;
+pub const ELEVATION_UNIT: f32 = 10.;
 
 #[derive(Debug)]
 pub struct Map {
@@ -31,6 +31,9 @@ impl Map {
 
 		for i in 0..archive.len() {
 			let mut file = archive.by_index(i)?;
+			// if file.name().ne("-1_-2") {
+			// 	continue;
+			// }
 			if file
 				.name()
 				.trim_matches(|c| char::is_numeric(c) || c == '-')

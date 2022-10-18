@@ -5,10 +5,31 @@ use crate::{
 
 use super::anm_transform::AnmTransform;
 
+#[derive(Clone)]
 pub struct SpriteCoord {
 	pub is_root_atlas: bool,
 	pub atlas: [f32; 4],
 	pub result: [f32; 8]
+}
+
+impl Default for SpriteCoord {
+	fn default() -> Self {
+		SpriteCoord {
+			is_root_atlas: true,
+			atlas: [0.; 4],
+			result: [0.; 8]
+		}
+	}
+}
+
+impl SpriteCoord {
+	pub fn new(is_root_atlas: bool, atlas: [f32; 4], result: [f32; 8]) -> Self {
+		SpriteCoord {
+			is_root_atlas,
+			atlas,
+			result
+		}
+	}
 }
 
 pub struct AnmInstance {
@@ -168,11 +189,7 @@ impl AnmInstance {
 								atlas: [shape_definition.top, shape_definition.left, shape_definition.bottom, shape_definition.right],
 								result: [tx, ty, x, y, x2, y2, x3, y3]
 							});
-							let r = transform.red * 1.;
-							let g = transform.green * 1.;
-							let b = transform.blue * 1.;
-							let a = transform.alpha;
-							self.colors.push([r, g, b, a]);
+							self.colors.push([transform.red, transform.green, transform.blue, transform.alpha]);
 						}
 					}
 				}

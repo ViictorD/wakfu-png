@@ -1,6 +1,6 @@
 [package]
 name = "wakfu_png"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
@@ -13,11 +13,15 @@ itertools = "0.10"
 image = "0.24.3"
 bytebuffer-rs = "0.4.0"
 imageproc = "0.23.0"
+rand = "0.8.5"
 
 [dependencies.zip]
 version = "0.6"
 default-features = false
 features = [ "deflate" ]
+
+[dependencies.num-traits]
+version = "0.2.0"
 
 [profile.dev.package.image]
 opt-level = 3

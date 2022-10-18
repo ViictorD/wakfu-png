@@ -75,6 +75,7 @@ impl<'a> TryRead<'a> for MapChunk {
 						let color = colors.get(color_idx);
 						let anm_sprite = None;
 						let dyn_sprite = None;
+						let particle_sprite = None;
 						let element = MapSprite {
 							cell_x,
 							cell_y,
@@ -88,7 +89,8 @@ impl<'a> TryRead<'a> for MapChunk {
 							layer,
 							color,
 							anm_sprite,
-							dyn_sprite
+							dyn_sprite,
+							particle_sprite
 						};
 						sprites.push(element);
 					}

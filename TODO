@@ -1,10 +1,14 @@
 --- Feature ---
 - Add Interactible ✓
 - Add Dynamic ✓
-- Extract particle
+- Add particle ✓
+- Add teleport cell particles
 - Add PNJ's
-- Extract paper files
+- Extract paper files (in game map)
+- Add recursive extraction based on teleport cells
 
---- Bug ---
+--- Bugs ---
+- Some 527 sprite are rendered in full black
+- Some particles get override if they take multiples cells and point to south west (ex: 527 water pump)
 - Some sprite do not render on the correct order when they are in the same coord
 - Some maps (ex: 368) have a too large width or height and fail to allocate the memory

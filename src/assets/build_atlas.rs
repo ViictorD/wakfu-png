@@ -1,183 +1,37 @@
 use anyhow::{anyhow, Result};
 use glam::Vec2;
 use image::{RgbaImage, imageops, Rgba};
-use crate::anm::processing::anm_instance::AnmInstance;
+use crate::anm::processing::anm_instance::{AnmInstance, SpriteCoord};
+use crate::lib::custom_imageops;
+use crate::lib::custom_imageops::color::BlendModes;
 
-pub fn build_atlas(atlas: RgbaImage, atlas_2: Option<RgbaImage>, anm: AnmInstance) -> Result<(RgbaImage, Vec2)> {
+pub fn build_atlas(
+	result: &mut RgbaImage,
+	sprite_position: Vec2,
+	atlas: RgbaImage,
+	atlas_2: Option<RgbaImage>,
+	anm: AnmInstance
+) {
 	let coords = anm.coords;
 	let colors = anm.colors;
 
-	let mut min_x = f32::MAX;
-	let mut min_y = f32::MAX;
-	let mut max_x = f32::MIN;
-	let mut max_y = f32::MIN;
+	let (min_x, max_y) = get_result_min_max_coord(&coords);
 
-	for coord in &coords {
-		let [x, y, x2, y2, x3, y3, x4, y4] = &coord.result;
-		if *x < min_x {
-			min_x = *x;
-		}
-		if *x2 < min_x {
-			min_x = *x2;
-		}
-		if *x3 < min_x {
-			min_x = *x3;
-		}
-		if *x4 < min_x {
-			min_x = *x4;
-		}
+	let origin = Vec2::new(min_x.abs(), max_y.abs());
 
-		if *y < min_y {
-			min_y = *y;
-		}
-		if *y2 < min_y {
-			min_y = *y2;
-		}
-		if *y3 < min_y {
-			min_y = *y3;
-		}
-		if *y4 < min_y {
-			min_y = *y4;
-		}
-		
-		if *x > max_x {
-			max_x = *x;
-		}
-		if *x2 > max_x {
-			max_x = *x2;
-		}
-		if *x3 > max_x {
-			max_x = *x3;
-		}
-		if *x4 > max_x {
-			max_x = *x4;
-		}
-		
-		if *y > max_y {
-			max_y = *y;
-		}
-		if *y2 > max_y {
-			max_y = *y2;
-		}
-		if *y3 > max_y {
-			max_y = *y3;
-		}
-		if *y4 > max_y {
-			max_y = *y4;
-		}
-	}
-
-	let final_width = (min_x.abs() + max_x.abs()).ceil() as u32;
-	let final_height = (min_y.abs() + max_y.abs()).ceil() as u32;
-
-	let mut result = RgbaImage::new(final_width, final_height);
-
-	for i in 0..coords.len() {
-		let atlas_coord = &coords.get(i).unwrap().atlas;
-		let final_coord = &coords.get(i).unwrap().result;
-		let [top, left, bottom, right] = atlas_coord;
-		let color = &colors[i];
-
-		let altas_width;
-		let atlas_height;
-		if coords.get(i).unwrap().is_root_atlas {
-			altas_width = atlas.width() as f32;
-			atlas_height = atlas.height() as f32;
-		}
-		else {
-			altas_width = atlas_2.as_ref().unwrap().width() as f32;
-			atlas_height = atlas_2.as_ref().unwrap().height() as f32;
-		}
-
-		let x =
-			if *left < 0. { (altas_width + left * altas_width).round() as u32 }
-			else { (left * altas_width).round() as u32 };
-		let y =
-			if *top < 0. { (atlas_height + top * atlas_height).round() as u32 }
-			else { (top * atlas_height).round() as u32 };
-		let width =
-			if *right < 0. { (altas_width + right * altas_width - x as f32).round() as u32 }
-			else { (right * altas_width - x as f32).round() as u32 };
-		let height =
-			if *bottom < 0. { (atlas_height + bottom * atlas_height - y as f32).round() as u32 }
-			else { (bottom * atlas_height - y as f32).round() as u32 };
-
-		let mut crop;
-		if coords.get(i).unwrap().is_root_atlas {
-			crop = imageops::crop(&mut atlas.clone(), x, y, width, height).to_image();
-		}
-		else {
-			crop = imageops::crop(&mut atlas_2.as_ref().unwrap().clone(), x, y, width, height).to_image();
-		}
-
-		let sprite_orientation = get_sprite_orientation(&final_coord);
-
-		match sprite_orientation {
-			SpriteOrientation::Normal => imageops::rotate180_in_place(&mut crop),
-			SpriteOrientation::XInvert => imageops::flip_vertical_in_place(&mut crop),
-			SpriteOrientation::YInvert => imageops::flip_horizontal_in_place(&mut crop),
-			SpriteOrientation::XAndYInvert => {}
-		}
-
-		let pts_src = [
-			[0., 0.],
-			[crop.width() as f32, 0.],
-			[crop.width() as f32, crop.height() as f32],
-			[0., crop.height() as f32]
-		];
-
-		let pts_dst = get_dest_pts(&final_coord, &sprite_orientation);
-		
-		let (trans_width, trans_height) = get_transformed_size(&pts_dst);
-		
-		let matrix_res = create_perspective_transform_matrix(&pts_src, &pts_dst);
-		if let Err(err) = matrix_res {
-			println!("{err}");
-			continue;
-		}
-		let matrix = matrix_res.unwrap();
-
-		let projection = imageproc::geometric_transformations::Projection::from_matrix(matrix).unwrap();
-		let mut tmp_img = RgbaImage::new(trans_width as u32, trans_height as u32);
-		imageproc::geometric_transformations::warp_into(
-			&crop,
-			&projection,
-			imageproc::geometric_transformations::Interpolation::Bilinear,
-			Rgba([0, 0, 0, 0]),
-			&mut tmp_img
-		);
-
-		crop = tmp_img;
-
-		for Rgba([r, g, b, a]) in crop.pixels_mut() {
-			// Apply premultiply alpha
-			if *a > 0 && *a < 255 {
-				*r = (*r as f32 * (1. / *a as f32) * 255.) as u8;
-				*g = (*g as f32 * (1. / *a as f32) * 255.) as u8;
-				*b = (*b as f32 * (1. / *a as f32) * 255.) as u8;
-			}
-			// Apply color tint
-			if *a > 0 {
-				*r = (color[0] * *r as f32) as u8;
-				*g = (color[1] * *g as f32) as u8;
-				*b = (color[2] * *b as f32) as u8;
-				*a = (color[3] * *a as f32) as u8;
-			}
-		}
-
-		let (final_x, final_y) = get_placement_coords(&min_x, &max_y, &final_coord, &sprite_orientation);
-		imageops::overlay(&mut result, &crop, final_x, final_y);
-	}
-
-	if anm.flip_animation {
-		imageops::flip_horizontal_in_place(&mut result);
-	}
-
-	let mut origin = Vec2::new(min_x.abs(), max_y.abs());
-	if anm.flip_animation {
-		origin = Vec2::new(max_x.abs(), max_y.abs());
-	}
-	Ok((result, origin))
+	let position = sprite_position - origin;
+	build_and_tint_altas(
+		result,
+		position,
+		&atlas,
+		&atlas_2,
+		&coords,
+		&colors,
+		min_x,
+		max_y,
+		(BlendModes::One, BlendModes::InvSrcAlpha),
+		anm.flip_animation
+	);
 }
 
 fn get_dest_pts(final_coord: &[f32; 8], sprite_orientation: &SpriteOrientation) -> [[f32; 2]; 4] {
@@ -419,4 +273,155 @@ fn create_perspective_transform_matrix(pts_src: &[[f32; 2]; 4], pts_dst: &[[f32;
 	}
 
 	Ok(result)
+}
+
+pub fn get_result_min_max_coord(coords: &Vec<SpriteCoord>) -> (f32, f32) {
+	let mut min_x = f32::MAX;
+	let mut max_y = f32::MIN;
+
+	for coord in coords {
+		let [x, y, x2, y2, x3, y3, x4, y4] = &coord.result;
+		if *x < min_x {
+			min_x = *x;
+		}
+		if *x2 < min_x {
+			min_x = *x2;
+		}
+		if *x3 < min_x {
+			min_x = *x3;
+		}
+		if *x4 < min_x {
+			min_x = *x4;
+		}
+
+		if *y > max_y {
+			max_y = *y;
+		}
+		if *y2 > max_y {
+			max_y = *y2;
+		}
+		if *y3 > max_y {
+			max_y = *y3;
+		}
+		if *y4 > max_y {
+			max_y = *y4;
+		}
+	}
+
+	(min_x, max_y)
+}
+
+pub fn build_and_tint_altas(
+	result: &mut RgbaImage,
+	position: Vec2,
+	atlas: &RgbaImage,
+	atlas_2: &Option<RgbaImage>,
+	coords: &Vec<SpriteCoord>,
+	colors: &Vec<[f32; 4]>,
+	min_x: f32,
+	max_y: f32,
+	blend_modes: (BlendModes, BlendModes),
+	is_anm_flip: bool
+) {
+	for i in 0..coords.len() {
+		let color = &colors[i];
+
+		let atlas_coord = &coords.get(i).unwrap().atlas;
+		let mut final_coord = coords.get(i).unwrap().result.clone();
+
+		if is_anm_flip {
+			final_coord = [
+				-final_coord[0], final_coord[1],
+				-final_coord[2], final_coord[3],
+				-final_coord[4], final_coord[5],
+				-final_coord[6], final_coord[7]
+			];
+		}
+
+		let [top, left, bottom, right] = atlas_coord;
+
+		let altas_width;
+		let atlas_height;
+		if coords.get(i).unwrap().is_root_atlas {
+			altas_width = atlas.width() as f32;
+			atlas_height = atlas.height() as f32;
+		}
+		else {
+			altas_width = atlas_2.as_ref().unwrap().width() as f32;
+			atlas_height = atlas_2.as_ref().unwrap().height() as f32;
+		}
+
+		let x =
+			if *left < 0. { (altas_width + left * altas_width).round() as u32 }
+			else { (left * altas_width).round() as u32 };
+		let y =
+			if *top < 0. { (atlas_height + top * atlas_height).round() as u32 }
+			else { (top * atlas_height).round() as u32 };
+		let width =
+			if *right < 0. { (altas_width + right * altas_width - x as f32).round() as u32 }
+			else { (right * altas_width - x as f32).round() as u32 };
+		let height =
+			if *bottom < 0. { (atlas_height + bottom * atlas_height - y as f32).round() as u32 }
+			else { (bottom * atlas_height - y as f32).round() as u32 };
+
+		let mut crop;
+		if coords.get(i).unwrap().is_root_atlas {
+			crop = imageops::crop(&mut atlas.clone(), x, y, width, height).to_image();
+		}
+		else {
+			crop = imageops::crop(&mut atlas_2.as_ref().unwrap().clone(), x, y, width, height).to_image();
+		}
+
+		let sprite_orientation = get_sprite_orientation(&final_coord);
+
+		match sprite_orientation {
+			SpriteOrientation::Normal => imageops::rotate180_in_place(&mut crop),
+			SpriteOrientation::XInvert => imageops::flip_vertical_in_place(&mut crop),
+			SpriteOrientation::YInvert => imageops::flip_horizontal_in_place(&mut crop),
+			SpriteOrientation::XAndYInvert => {}
+		}
+
+		let pts_src = [
+			[0., 0.],
+			[crop.width() as f32, 0.],
+			[crop.width() as f32, crop.height() as f32],
+			[0., crop.height() as f32]
+		];
+
+		let pts_dst = get_dest_pts(&final_coord, &sprite_orientation);
+
+		let (trans_width, trans_height) = get_transformed_size(&pts_dst);
+		
+		let matrix_res = create_perspective_transform_matrix(&pts_src, &pts_dst);
+		if let Err(_) = matrix_res {
+			continue;
+		}
+		let matrix = matrix_res.unwrap();
+
+		let projection = imageproc::geometric_transformations::Projection::from_matrix(matrix).unwrap();
+		let mut tmp_img = RgbaImage::new(trans_width as u32, trans_height as u32);
+		imageproc::geometric_transformations::warp_into(
+			&crop,
+			&projection,
+			imageproc::geometric_transformations::Interpolation::Bilinear,
+			Rgba([0, 0, 0, 0]),
+			&mut tmp_img
+		);
+
+		crop = tmp_img;
+
+		for Rgba([r, g, b, a]) in crop.pixels_mut() {
+			// Apply color tint
+			if *a > 0 {
+				*r = (color[0] * *r as f32) as u8;
+				*g = (color[1] * *g as f32) as u8;
+				*b = (color[2] * *b as f32) as u8;
+				*a = (color[3] * *a as f32) as u8;
+			}
+		}
+		let (mut final_x, mut final_y) = get_placement_coords(&min_x, &max_y, &final_coord, &sprite_orientation);
+		final_x += position.x as i64;
+		final_y += position.y as i64;
+		custom_imageops::custom_overlay(result, &crop, final_x, final_y, &blend_modes.0, &blend_modes.1);
+	}
 }

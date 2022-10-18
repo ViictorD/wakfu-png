@@ -33,39 +33,40 @@ impl<'a> TryRead<'a> for ElementCoord {
 }
 
 #[derive(Debug)]
-pub struct Particle {
-	_coord: ElementCoord,
-	_system_id: i32,
-	_level: u8,
-	_unknown: f32,
-	_offset_x: i8,
-	_offset_y: i8,
-	_offset_z: i8,
-	_lod: i8
+pub struct ParticleDef {
+	pub coord: ElementCoord,
+	pub system_id: i32,
+	pub level: i8,
+	pub unknown: f32,
+	pub offset_x: i8,
+	pub offset_y: i8,
+	pub offset_z: i8,
+	pub lod: i8
 }
 
-impl<'a> TryRead<'a> for Particle {
+impl<'a> TryRead<'a> for ParticleDef {
 	fn try_read(bytes: &'a [u8], _ctx: ()) -> byte::Result<(Self, usize)> {
 		let offset = &mut 0;
 
-		let _coord: ElementCoord = bytes.read(offset)?;
-		let _system_id: i32 = bytes.read(offset)?;
-		let _level: u8 = bytes.read(offset)?;
-		let _unknown: f32 = bytes.read(offset)?;
-		let _offset_x: i8 = bytes.read(offset)?;
-		let _offset_y: i8 = bytes.read(offset)?;
-		let _offset_z: i8 = bytes.read(offset)?;
-		let _lod: i8 = bytes.read(offset)?;
+		let coord: ElementCoord = bytes.read(offset)?;
+		let system_id: i32 = bytes.read(offset)?;
 
-		let result = Particle {
-			_coord,
-			_system_id,
-			_level,
-			_unknown,
-			_offset_x,
-			_offset_y,
-			_offset_z,
-			_lod
+		let level: i8 = bytes.read(offset)?;
+		let unknown: f32 = bytes.read(offset)?;
+		let offset_x: i8 = bytes.read(offset)?;
+		let offset_y: i8 = bytes.read(offset)?;
+		let offset_z: i8 = bytes.read(offset)?;
+		let lod: i8 = bytes.read(offset)?;
+
+		let result = ParticleDef {
+			coord,
+			system_id,
+			level,
+			unknown,
+			offset_x,
+			offset_y,
+			offset_z,
+			lod
 		};
 
 		Ok((result, *offset))
@@ -240,7 +241,7 @@ impl<'a> TryRead<'a> for DynamicElementDef {
 pub struct Environment {
 	pub x: i16,
 	pub y: i16,
-	_particle_data: Vec<Particle>,
+	pub particle_data: Vec<ParticleDef>,
 	_sound_data: Vec<Sound>,
 	_ambiances_id: Vec<i32>,
 	_ambiances: Vec<u8>,
@@ -259,9 +260,9 @@ impl<'a> TryRead<'a> for Environment {
 
 		// Particle data
 		let num_particle_system: u8 = bytes.read(offset)?;
-		let mut _particle_data: Vec<Particle> = Vec::with_capacity(num_particle_system as usize * size_of::<Particle>());
+		let mut particle_data: Vec<ParticleDef> = Vec::with_capacity(num_particle_system as usize * size_of::<ParticleDef>());
 		for _ in 0..num_particle_system {
-			_particle_data.push(bytes.read(offset)?);
+			particle_data.push(bytes.read(offset)?);
 		}
 		
 		// Sound
@@ -301,7 +302,7 @@ impl<'a> TryRead<'a> for Environment {
 		let result = Environment {
 			x,
 			y,
-			_particle_data,
+			particle_data,
 			_sound_data,
 			_ambiances_id,
 			_ambiances,

@@ -4,6 +4,8 @@ use anyhow::{anyhow, Result};
 use byte::ctx::Bytes;
 use byte::{BytesExt, TryRead};
 
+use crate::utils::math_helper::MathHelper;
+
 #[derive(Debug)]
 pub struct Tgam<'a> {
 	width: u16,
@@ -20,12 +22,12 @@ impl<'a> Tgam<'a> {
 
 	#[inline]
 	pub fn width(&self) -> u32 {
-		round_up_to_power_of_two(self.width.into())
+		MathHelper::nearest_greatest_pow_of_two(self.width as i32) as u32
 	}
 
 	#[inline]
 	pub fn height(&self) -> u32 {
-		round_up_to_power_of_two(self.height.into())
+		MathHelper::nearest_greatest_pow_of_two(self.height as i32) as u32
 	}
 }
 
@@ -83,17 +85,4 @@ impl TgamLoader {
 			.map_err(|err| anyhow!("Failed to read TGAM: {:?}", err))?;
 		Ok(tgam)
 	}
-}
-
-fn round_up_to_power_of_two(value: u32) -> u32 {
-	if value < 2 {
-		return value;
-	}
-	let mut v = value - 1;
-	v = v | v >> 1;
-	v = v | v >> 2;
-	v = v | v >> 4;
-	v = v | v >> 8;
-	v = v | v >> 16;
-	v + 1
 }

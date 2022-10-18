@@ -1,0 +1,16 @@
+pub mod affector;
+pub mod attraction_force;
+pub mod boost_force;
+pub mod circle_path;
+pub mod color_fader;
+pub mod deformer;
+pub mod direction_follower;
+pub mod frictional_force;
+pub mod linear_force;
+pub mod rebound;
+pub mod rotor_force;
+pub mod light_radius_deformer;
+pub mod curve;
+pub mod rotation;
+pub mod rotation_interpolation;
+pub mod affector_validator;

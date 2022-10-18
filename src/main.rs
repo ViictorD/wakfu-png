@@ -4,27 +4,33 @@ use std::path::PathBuf;
 use anyhow::Result;
 use assets::gfx::Gfx;
 use assets::tgam::TgamLoader;
-use glam::{const_vec2, Vec2};
-use image::{RgbaImage, imageops};
+use glam::{const_vec2, Vec2, Vec3};
+use image::{RgbaImage};
 use itertools::Itertools;
 use map::color::Color;
 use map::environment::EnvironmentChunk;
 use map::{element::ElementLibrary};
 use map::Map;
-use map::sprite::{MapSprite, AnmSprite, DynamicSprite};
+use map::sprite::{MapSprite, AnmSprite, DynamicSprite, ParticleSprite};
 use pico_args::Arguments;
 use std::collections::HashMap;
 use map::{CELL_WIDTH, CELL_HEIGHT};
 use bdata::binary_document::{InteractiveElementModelBinaryData};
 
+use crate::assets::{build_particle, build_atlas};
 use crate::bdata::binary_document::BinaryDocument;
 use crate::map::binar_serial_part::BinarSerialPartsEnum;
+use crate::particles::particle_system::ParticleSystem;
+use crate::lib::custom_imageops;
+use crate::lib::custom_imageops::color::BlendModes;
 
 mod assets;
 mod map;
 mod bdata;
 mod utils;
 mod anm;
+mod particles;
+mod lib;
 
 const FLIP_Y: Vec2 = const_vec2!([1., -1.]);
 
@@ -47,14 +53,15 @@ fn convert_interactive_as_sprite(env: &EnvironmentChunk, iem: &HashMap<i32, Inte
 							group_key: 0,
 							group_id: 0,
 							layer: 0,
-							color: Color::rgb_linear(1.0, 1.0, 1.0), // Change this to bdata color
+							color: Color::rgb_linear(1.0, 1.0, 1.0),
 							anm_sprite: Some(AnmSprite::new(
 								bin_data.gfx,
 								specific_data_part.direction,
 								specific_data_part.activation_pattern,
 								specific_data_part.state
 							)),
-							dyn_sprite: None
+							dyn_sprite: None,
+							particle_sprite: None
 						};
 						interactive_sprites.push(sprite);
 					}
@@ -65,7 +72,7 @@ fn convert_interactive_as_sprite(env: &EnvironmentChunk, iem: &HashMap<i32, Inte
 	interactive_sprites
 }
 
-fn convert_dynamic_element_as_sprite(env: &EnvironmentChunk) -> Vec<MapSprite> {
+fn convert_dynamic_as_sprite(env: &EnvironmentChunk) -> Vec<MapSprite> {
 	let mut dynamic_sprites: Vec<MapSprite> = Vec::new();
 	for chunk in env.get_chunks() {
 		for dynamic_element in chunk.get_dynamic_elements() {
@@ -87,13 +94,46 @@ fn convert_dynamic_element_as_sprite(env: &EnvironmentChunk) -> Vec<MapSprite> {
 						dynamic_element.gfx_id,
 						dynamic_element.direction,
 						dynamic_element.base_animation.clone()
-					))
+					)),
+					particle_sprite: None
 				};
 				dynamic_sprites.push(sprite);
 			}
 		}
 	}
 	dynamic_sprites
+}
+
+fn convert_particles_as_sprite(env: &EnvironmentChunk) -> Vec<MapSprite> {
+	let mut particles_sprites = Vec::new();
+	for chunk in env.get_chunks() {
+		for particle in &chunk.particle_data {
+			let sprite = MapSprite {
+				cell_x: particle.coord.x as i32 + chunk.x as i32 * 18,
+				cell_y: particle.coord.y as i32 + chunk.y as i32 * 18,
+				cell_z: particle.coord.z,
+				height: 0,
+				altitude_order: 150,
+				tag: 0,
+				element_id: -1,
+				group_key: 0,
+				group_id: 0,
+				layer: 0,
+				color: Color::rgb_linear(1.0, 1.0, 1.0),
+				anm_sprite: None,
+				dyn_sprite: None,
+				particle_sprite: Some(ParticleSprite::new(
+					particle.system_id,
+					particle.level,
+					particle.offset_x,
+					particle.offset_y,
+					particle.offset_z
+				))
+			};
+			particles_sprites.push(sprite);
+		}
+	}
+	particles_sprites
 }
 
 fn get_margin_and_png_size(lib: &ElementLibrary, sorted_sprite: &HashMap<i64, &MapSprite>) -> (Vec2, Vec2) {
@@ -159,15 +199,21 @@ fn create_png(
 		}
 	}
 
-	// Interactive elements
-	let interactive_sprites: Vec<MapSprite> = convert_interactive_as_sprite(&env, &iem);
+	// // Interactive elements
+	let interactive_sprites = convert_interactive_as_sprite(&env, &iem);
 	for sprite in interactive_sprites.iter() {
 		sorted_sprite.insert(sprite.hashcode(), sprite);
 	}
 
-	// Dynamic elements
-	let dynamic_sprites: Vec<MapSprite> = convert_dynamic_element_as_sprite(&env);
+	// // Dynamic elements
+	let dynamic_sprites = convert_dynamic_as_sprite(&env);
 	for sprite in dynamic_sprites.iter() {
+		sorted_sprite.insert(sprite.hashcode(), sprite);
+	}
+
+	// Particles elements
+	let particles_sprites = convert_particles_as_sprite(&env);
+	for sprite in particles_sprites.iter() {
 		sorted_sprite.insert(sprite.hashcode(), sprite);
 	}
 
@@ -189,16 +235,19 @@ fn create_png(
 				println!("{}", err);
 				continue;
 			}
-			let (sprite_image, origin) = res.unwrap();
-			let vec2 = sprite.screen_position() * FLIP_Y - origin;
-			imageops::overlay(
+			let (atlas, atlas_2, anm_instance) = res.unwrap();
+
+			build_atlas::build_atlas(
 				&mut image,
-				&sprite_image,
-				(vec2.x - margin.x) as i64,
-				(vec2.y - margin.y) as i64
+				sprite.screen_position() * FLIP_Y - margin,
+				atlas,
+				atlas_2,
+				anm_instance
 			);
+
 			continue;
 		}
+
 		// Handle dynamic animated sprite
 		if let Some(dyn_sprite) = &sprite.dyn_sprite {
 			let res = gfx.load_dynamic_texture_as_rgba_image(dyn_sprite);
@@ -206,16 +255,57 @@ fn create_png(
 				println!("{}", err);
 				continue;
 			}
-			let (sprite_image, origin) = res.unwrap();
-			let vec2 = sprite.screen_position() * FLIP_Y - origin;
-			imageops::overlay(
+			let (atlas, atlas_2, anm_instance) = res.unwrap();
+
+			build_atlas::build_atlas(
 				&mut image,
-				&sprite_image,
-				(vec2.x - margin.x) as i64,
-				(vec2.y - margin.y) as i64
+				sprite.screen_position() * FLIP_Y - margin,
+				atlas,
+				atlas_2,
+				anm_instance
 			);
+
 			continue;
 		}
+
+		// Handle particle
+		if let Some(particle) = &sprite.particle_sprite {
+			let res = gfx.load_particle_system_and_tga(
+				particle,
+				Vec3::new(sprite.cell_x as f32, sprite.cell_y as f32, sprite.cell_z as f32)
+			);
+			if let Err(err) = res {
+				println!("{}", err);
+				continue;
+			}
+
+			let (loaded_particles, tga) = res.unwrap();
+			let mut particle_system = ParticleSystem::new();
+			particle_system.load(loaded_particles);
+			particle_system.register_all_base_emitters();
+		
+			// We simulate 5s of rendering, to get a well rendered result
+			const TIME_INCREMENT: f32 = 0.0066;
+			let mut life = 0.;
+			while life < 5. {
+				life += TIME_INCREMENT;
+				particle_system.update(TIME_INCREMENT);
+			}
+
+			let (particles_coords, particles_colors) = particle_system.get_particles_coords_and_colors();
+			let iso_offsets = ParticleSystem::get_screen_position(particle.offset_x as f32 / 100., particle.offset_y as f32 / 100., particle.offset_z as f32 / 10.);
+			build_particle::build_particle(
+				&mut image,
+				sprite.screen_position() * FLIP_Y - margin + Vec2::new(iso_offsets.0, iso_offsets.1) * FLIP_Y,
+				tga,
+				particles_coords,
+				particles_colors,
+				(particle_system.src_blend, particle_system.dst_blend)
+			);
+
+			continue;
+		}
+
 		// Handle base map sprite
 		if let Some(element) = lib.get(sprite.element_id) {
 			// Skip the debug animated cell
@@ -229,17 +319,19 @@ fn create_png(
 				continue;
 			}
 			let vec2 = sprite.screen_position() * FLIP_Y - element.origin();
-			imageops::overlay(
+			custom_imageops::custom_overlay(
 				&mut image,
 				&res.unwrap(),
 				(vec2.x - margin.x) as i64,
-				(vec2.y - margin.y) as i64
+				(vec2.y - margin.y) as i64,
+				&BlendModes::One,
+				&BlendModes::InvSrcAlpha
 			);
 		}
 	}
 
 	println!("Saving into {}.png...", map_id);
-	if let Err(err) = image.save_with_format(format!("./{}.png", map_id), image::ImageFormat::Png){
+	if let Err(err) = image.save_with_format(format!("./{}.png", map_id), image::ImageFormat::Png) {
 		println!("Failed to save image: {}", err);
 	}
 }
@@ -249,29 +341,33 @@ fn main() -> Result<()> {
 
 	let game_path: PathBuf = pargs.value_from_str("--path")?;
 	let map_id: i32 = pargs.value_from_str("--map")?;
-
-	let maps_path = game_path.join("contents").join("maps");
+	
+	let contents_path = game_path.join("contents");
+	let maps_path = contents_path.join("maps");
+	
 	let gfx_path = maps_path.join("gfx.jar");
-	let animation_path = game_path
-		.join("contents")
-		.join("animations");
+	let animation_path = contents_path.join("animations");
 	let interactive_path = animation_path
 		.join("interactives")
 		.join("interactives.jar");
 	let dynamic_path = animation_path
 		.join("dynamics")
 		.join("dynamics.jar");
+	let particles_path = contents_path
+		.join("particles")
+		.join("particles.jar");
 	let map_path = maps_path.join("gfx").join(format!("{}.jar", map_id));
 	let lib_path = maps_path.join("data.jar");
 	let env_path = maps_path.join("env").join(format!("{}.jar", map_id));
-	let iem_path = game_path.join("contents").join("bdata").join("34.jar");
-
+	let iem_path = contents_path.join("bdata").join("34.jar");
+	
 	let map = Map::load(File::open(map_path)?)?;
 	let lib = ElementLibrary::load(File::open(lib_path)?)?;
 	let gfx = Gfx::load(
 		File::open(gfx_path)?,
 		File::open(interactive_path)?,
 		File::open(dynamic_path)?,
+		File::open(particles_path)?
 	);
 	let env = EnvironmentChunk::load(File::open(env_path)?)?;
 	let mut iem = BinaryDocument::load(File::open(iem_path)?)?;
