@@ -112,7 +112,7 @@ impl InteractiveElementData {
 			toc_offset.push(bytes.read_i32()?);
 		}
 
-		let mut data = Vec::new();
+		let mut data = Vec::with_capacity(toc_length as usize);
 
 		for i in 0..toc_length {
 			let index: &i8 = toc_index.get(i as usize).unwrap();

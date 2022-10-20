@@ -2,10 +2,10 @@
 - Add Interactible ✓
 - Add Dynamic ✓
 - Add particle ✓
-- Add teleport cell particles
+- Add teleport cell particles ✓
 - Add PNJ's
 - Extract paper files (in game map)
-- Add recursive extraction based on teleport cells
+- Add recursive extraction based on interactive teleport element (teleport cell/doors/drago...)
 
 --- Bugs ---
 - Some 527 sprite are rendered in full black

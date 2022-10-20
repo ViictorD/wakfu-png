@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use anyhow::Result;
 use assets::gfx::Gfx;
 use assets::tgam::TgamLoader;
+use bdata::interactive_element_model_binary_data::InteractiveElementModelBinaryData;
+// use bdata::teleporter_binary_data::TeleporterBinaryData;
 use glam::{const_vec2, Vec2, Vec3};
 use image::{RgbaImage};
 use itertools::Itertools;
@@ -15,7 +17,6 @@ use map::sprite::{MapSprite, AnmSprite, DynamicSprite, ParticleSprite};
 use pico_args::Arguments;
 use std::collections::HashMap;
 use map::{CELL_WIDTH, CELL_HEIGHT};
-use bdata::binary_document::{InteractiveElementModelBinaryData};
 
 use crate::assets::{build_particle, build_atlas};
 use crate::bdata::binary_document::BinaryDocument;
@@ -40,9 +41,9 @@ fn convert_interactive_as_sprite(env: &EnvironmentChunk, iem: &HashMap<i32, Inte
 		for interactive in chunk.get_interactive_elements() {
 			for interactive_data in interactive.data.get_data() {
 				if let BinarSerialPartsEnum::SpecificDataPart(specific_data_part) = interactive_data {
-					if let Some(view) = interactive.views.get(0) {
+					for view in &interactive.views {
 						let bin_data = iem.get(view).unwrap();
-						let sprite = MapSprite {
+						let mut sprite = MapSprite {
 							cell_x: specific_data_part.x,
 							cell_y: specific_data_part.y,
 							cell_z: specific_data_part.z,
@@ -54,15 +55,28 @@ fn convert_interactive_as_sprite(env: &EnvironmentChunk, iem: &HashMap<i32, Inte
 							group_id: 0,
 							layer: 0,
 							color: Color::rgb_linear(1.0, 1.0, 1.0),
-							anm_sprite: Some(AnmSprite::new(
+							anm_sprite: None,
+							dyn_sprite: None,
+							particle_sprite: None
+						};
+						if bin_data.particle_id == 0 {
+							sprite.anm_sprite = Some(AnmSprite::new(
 								bin_data.gfx,
 								specific_data_part.direction,
 								specific_data_part.activation_pattern,
 								specific_data_part.state
-							)),
-							dyn_sprite: None,
-							particle_sprite: None
-						};
+							));
+						}
+						else {
+							sprite.altitude_order = 150;
+							sprite.particle_sprite = Some(ParticleSprite::new(
+								bin_data.particle_id,
+								1,
+								0,
+								0,
+								bin_data.particle_offset_z as i8
+							));
+						}
 						interactive_sprites.push(sprite);
 					}
 				}
@@ -360,6 +374,7 @@ fn main() -> Result<()> {
 	let lib_path = maps_path.join("data.jar");
 	let env_path = maps_path.join("env").join(format!("{}.jar", map_id));
 	let iem_path = contents_path.join("bdata").join("34.jar");
+	// let teleporter_path = contents_path.join("bdata").join("72.jar");
 	
 	let map = Map::load(File::open(map_path)?)?;
 	let lib = ElementLibrary::load(File::open(lib_path)?)?;
@@ -370,8 +385,11 @@ fn main() -> Result<()> {
 		File::open(particles_path)?
 	);
 	let env = EnvironmentChunk::load(File::open(env_path)?)?;
-	let mut iem = BinaryDocument::load(File::open(iem_path)?)?;
-	let iem_data = iem.read_iem()?;
+	let mut iem = BinaryDocument::load(File::open(iem_path)?, 34)?;
+	let iem_data = InteractiveElementModelBinaryData::read(&mut iem);
+
+	// let mut teleporter = BinaryDocument::load(File::open(teleporter_path)?, 72)?;
+	// let teleporter_data = TeleporterBinaryData::read(&mut teleporter);
 
 	create_png(map_id, map, lib, gfx, env, iem_data);
 

@@ -171,7 +171,6 @@ impl Affector {
 				}
 				let d = time_validator.end - life;
 				if d.lt(&0.) {
-					// return true;
 					return false;
 				}
 				let elapsed_time_since_start = time_increment - time_validator.start;

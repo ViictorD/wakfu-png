@@ -6,32 +6,21 @@ use super::index::Index;
 use std::mem::size_of;
 
 #[derive(Debug)]
-pub struct InteractiveElementModelBinaryData {
-	pub view_model_id: i32,
-	pub view_type_id: i16,
-	pub gfx: i32,
-	pub color: i32,
-	pub height: i8,
-	pub particle_id: i32,
-	pub particle_offset_z: i32
-}
-
-#[derive(Debug)]
-struct Entry {
+pub struct Entry {
 	_id: i64,
-	position: i32,
+	pub position: i32,
 	_size: i32,
-	seed: i8
+	pub seed: i8
 }
 
 pub struct BinaryDocument {
-	entries: Vec<Entry>,
+	pub entries: Vec<Entry>,
 	_indexes: HashMap<String, Index>,
-	buffer: RandomByteBufferReader
+	pub buffer: RandomByteBufferReader
 }
 
 impl BinaryDocument {
-	pub fn load<R: Read + Seek>(input: R) -> Result<Self> {
+	pub fn load<R: Read + Seek>(input: R, data_type: u32) -> Result<Self> {
 		let mut archive = zip::ZipArchive::new(input)?;
 		let mut file = archive.by_index(0)?;
 
@@ -50,7 +39,7 @@ impl BinaryDocument {
 
 		let mut rand_buffer = RandomByteBufferReader::load(
 			sliced_buffer,
-			34,
+			data_type as i32,
 			version
 		)?;
 		
@@ -88,7 +77,7 @@ impl BinaryDocument {
 
 		let res_buffer = RandomByteBufferReader::load(
 			sliced_buffer,
-			34,
+			data_type as i32,
 			version
 		)?;
 
@@ -100,34 +89,5 @@ impl BinaryDocument {
 
 		Ok(result)
 		
-	}
-
-	pub fn read_iem(&mut self) -> Result<HashMap<i32, InteractiveElementModelBinaryData>> {
-		let mut iem: HashMap<i32, InteractiveElementModelBinaryData> = HashMap::new();
-		
-		for i in 0..self.entries.len() {
-			let entry = self.entries.get(i).unwrap();
-			self.buffer.position(entry.position, entry.seed);
-
-			let view_model_id: i32 = self.buffer.get_int();
-			let view_type_id: i16 = self.buffer.get_short();
-			let gfx: i32 = self.buffer.get_int();
-			let color: i32 = self.buffer.get_int();
-			let height: i8 = self.buffer.get_byte();
-			let particle_id: i32 = self.buffer.get_int();
-			let particle_offset_z: i32 = self.buffer.get_int();
-
-			let result = InteractiveElementModelBinaryData {
-				view_model_id,
-				view_type_id,
-				gfx,
-				color,
-				height,
-				particle_id,
-				particle_offset_z
-			};
-			iem.insert(view_model_id, result);
-		}
-		Ok(iem)
 	}
 }
