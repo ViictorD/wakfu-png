@@ -42,10 +42,10 @@ impl RandomByteBufferReader {
 		self.buffer.read_i8().unwrap().overflowing_sub(self.seed).0
 	}
 
-	// pub fn read_boolean(&mut self) -> bool {
-	// 	self.inc();
-	// 	self.buffer.read_i8().unwrap().overflowing_sub(self.seed).0 != 0
-	// }
+	pub fn read_boolean(&mut self) -> bool {
+		self.inc();
+		self.buffer.read_i8().unwrap().overflowing_sub(self.seed).0 != 0
+	}
 
 	pub fn get_short(&mut self) -> i16 {
 		self.inc();

@@ -1,11 +1,11 @@
-use std::fs::File;
+use std::fs::{File, self};
 use std::path::PathBuf;
 
 use anyhow::Result;
 use assets::gfx::Gfx;
 use assets::tgam::TgamLoader;
 use bdata::interactive_element_model_binary_data::InteractiveElementModelBinaryData;
-// use bdata::teleporter_binary_data::TeleporterBinaryData;
+use bdata::teleporter_binary_data::{TeleporterBinaryData, Destination};
 use glam::{const_vec2, Vec2, Vec3};
 use image::{RgbaImage};
 use itertools::Itertools;
@@ -40,8 +40,8 @@ fn convert_interactive_as_sprite(env: &EnvironmentChunk, iem: &HashMap<i32, Inte
 	for chunk in env.get_chunks() {
 		for interactive in chunk.get_interactive_elements() {
 			for interactive_data in interactive.data.get_data() {
-				if let BinarSerialPartsEnum::SpecificDataPart(specific_data_part) = interactive_data {
-					for view in &interactive.views {
+				for view in &interactive.views {
+					if let BinarSerialPartsEnum::SpecificDataPart(specific_data_part) = interactive_data {
 						let bin_data = iem.get(view).unwrap();
 						let mut sprite = MapSprite {
 							cell_x: specific_data_part.x,
@@ -199,11 +199,13 @@ fn get_margin_and_png_size(lib: &ElementLibrary, sorted_sprite: &HashMap<i64, &M
 fn create_png(
 	map_id: i32,
 	map: Map,
-	lib: ElementLibrary,
-	mut gfx: Gfx,
+	lib: &ElementLibrary,
+	gfx: &mut Gfx,
 	env: EnvironmentChunk,
-	iem: HashMap<i32, InteractiveElementModelBinaryData>
-) {
+	iem: &HashMap<i32, InteractiveElementModelBinaryData>,
+	output_path: String
+) -> Result<()> {
+	println!("Processing {map_id}...");
 	let mut sorted_sprite: HashMap<i64, &MapSprite> = HashMap::new();
 	
 	// Base map
@@ -344,10 +346,77 @@ fn create_png(
 		}
 	}
 
-	println!("Saving into {}.png...", map_id);
-	if let Err(err) = image.save_with_format(format!("./{}.png", map_id), image::ImageFormat::Png) {
+	println!("Saving into {}/{}.png...", output_path, map_id);
+	if let Err(err) = image.save_with_format(format!("{}/{}.png", output_path, map_id), image::ImageFormat::Png) {
 		println!("Failed to save image: {}", err);
 	}
+	Ok(())
+}
+
+fn get_teleporters_id(
+	env: &EnvironmentChunk,
+) -> Vec<i32> {
+	let mut map_teleporters_id = Vec::new();
+	for chunk in env.get_chunks() {
+		for interactive in chunk.get_interactive_elements() {
+			for interactive_data in interactive.data.get_data() {
+				if let BinarSerialPartsEnum::SpecificDataPart(specific_data_part) = interactive_data {
+					if interactive.interactive_type == 51 {
+						if let Ok(id) = specific_data_part.parameter.parse::<i32>() {
+							map_teleporters_id.push(id);
+						}
+					}
+				}
+			}
+		}
+	}
+	map_teleporters_id
+}
+
+fn recursive_create_png(
+	processed_map: &mut Vec<i32>,
+	worlds_id: Vec<i32>,
+	teleporters_data: &HashMap<i32, Vec<Destination>>,
+	maps_path: &PathBuf,
+	lib: &ElementLibrary,
+	gfx: &mut Gfx,
+	iem_data: &HashMap<i32, InteractiveElementModelBinaryData>,
+	output_path: PathBuf
+) -> Result<()> {
+	for world in worlds_id {
+		if processed_map.contains(&world) {
+			continue ;
+		}
+		let map_path = maps_path.join("gfx").join(format!("{}.jar", world));
+		let env_path = maps_path.join("env").join(format!("{}.jar", world));
+		let map = Map::load(File::open(map_path)?)?;
+		let env = EnvironmentChunk::load(File::open(env_path)?)?;
+		let map_teleporters_id = get_teleporters_id(&env);
+		
+		let mut new_worlds_id = Vec::new();
+		for id in map_teleporters_id {
+			if let Some(dest) = teleporters_data.get(&id) {
+				let ids: Vec<i32> = dest.iter().map(|exit| exit.world_id).collect();
+				for i in ids {
+					if !processed_map.contains(&i) && !new_worlds_id.contains(&i) {
+						new_worlds_id.push(i);
+					}
+				}
+			}
+		}
+		if !output_path.exists() {
+			fs::create_dir(output_path.clone())?;
+		}
+		let str_output_path = output_path.clone().into_os_string().into_string().unwrap();
+		create_png(world, map, lib, gfx, env, iem_data, str_output_path)?;
+		processed_map.push(world);
+		if new_worlds_id.len() > 0 {
+			println!("\nNext maps to process: {:?}\n", new_worlds_id);
+			let new_output_path = output_path.join(world.to_string());
+			recursive_create_png(processed_map, new_worlds_id, teleporters_data, maps_path, lib, gfx, iem_data, new_output_path)?;
+		}
+	}
+	Ok(())
 }
 
 fn main() -> Result<()> {
@@ -355,6 +424,7 @@ fn main() -> Result<()> {
 
 	let game_path: PathBuf = pargs.value_from_str("--path")?;
 	let map_id: i32 = pargs.value_from_str("--map")?;
+	let is_recursive: bool = pargs.contains("--recursive");
 	
 	let contents_path = game_path.join("contents");
 	let maps_path = contents_path.join("maps");
@@ -374,24 +444,34 @@ fn main() -> Result<()> {
 	let lib_path = maps_path.join("data.jar");
 	let env_path = maps_path.join("env").join(format!("{}.jar", map_id));
 	let iem_path = contents_path.join("bdata").join("34.jar");
-	// let teleporter_path = contents_path.join("bdata").join("72.jar");
+	let teleporter_path = contents_path.join("bdata").join("72.jar");
 	
-	let map = Map::load(File::open(map_path)?)?;
 	let lib = ElementLibrary::load(File::open(lib_path)?)?;
-	let gfx = Gfx::load(
+	let mut gfx = Gfx::load(
 		File::open(gfx_path)?,
 		File::open(interactive_path)?,
 		File::open(dynamic_path)?,
 		File::open(particles_path)?
 	);
-	let env = EnvironmentChunk::load(File::open(env_path)?)?;
 	let mut iem = BinaryDocument::load(File::open(iem_path)?, 34)?;
 	let iem_data = InteractiveElementModelBinaryData::read(&mut iem);
 
-	// let mut teleporter = BinaryDocument::load(File::open(teleporter_path)?, 72)?;
-	// let teleporter_data = TeleporterBinaryData::read(&mut teleporter);
-
-	create_png(map_id, map, lib, gfx, env, iem_data);
+	let output_path = PathBuf::from("./output");
+	if !output_path.exists() {
+		fs::create_dir(output_path.clone())?;
+	}
+	if is_recursive {
+		let mut teleporter = BinaryDocument::load(File::open(teleporter_path)?, 72)?;
+		let teleporters_data = TeleporterBinaryData::read(&mut teleporter);
+		let mut processed_map = Vec::new();
+		let worlds_id = vec![map_id];
+		recursive_create_png(&mut processed_map, worlds_id, &teleporters_data, &maps_path, &lib, &mut gfx, &iem_data, output_path.join(map_id.to_string()))?;
+	}
+	else {
+		let map = Map::load(File::open(map_path)?)?;
+		let env = EnvironmentChunk::load(File::open(env_path)?)?;
+		create_png(map_id, map, &lib, &mut gfx, env, &iem_data, output_path.clone().into_os_string().into_string().unwrap())?;
+	}
 
 	Ok(())
 }

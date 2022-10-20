@@ -1,13 +1,12 @@
+use std::collections::HashMap;
+
 use super::binary_document::BinaryDocument;
 
-pub struct TeleporterBinaryData {
-	pub teleporter_id: i32,
-	pub destinations: Vec<Destination>
-}
+pub struct TeleporterBinaryData;
 
 impl TeleporterBinaryData {
-	pub fn read(document: &mut BinaryDocument) -> Vec<TeleporterBinaryData> {
-		let mut teleporters = Vec::with_capacity(document.entries.len());
+	pub fn read(document: &mut BinaryDocument) -> HashMap<i32, Vec<Destination>> {
+		let mut teleporters = HashMap::new();
 
 		for i in 0..document.entries.len() {
 			let entry = document.entries.get(i).unwrap();
@@ -20,84 +19,79 @@ impl TeleporterBinaryData {
 				destinations.push(Destination::read(document));
 			}
 
-			teleporters.push(
-				TeleporterBinaryData {
-					teleporter_id,
-					destinations
-				}
-			);
+			teleporters.insert(teleporter_id, destinations);
 		}
 		teleporters
 	}
 }
 
 pub struct Destination {
-	destination_id: i32,
-	x: i32,
-	y: i32,
-	z: i32,
-	world_id: i32,
-	direction: i8,
-	criteria: String,
-	visual_id: i32,
-	aps_id: i32,
-	delay: i16,
-	item_consumed: i32,
-	item_quantity: i16,
-	kama_cost: i16,
-	do_consume_item: bool,
-	is_invisible: bool,
-	unknown: i32,
-	loading_animation_name: String,
-	loading_min_duration: i32,
-	loading_fade_in_duration: i32,
-	loading_fade_out_duration: i32
+	_destination_id: i32,
+	_x: i32,
+	_y: i32,
+	_z: i32,
+	pub world_id: i32,
+	_direction: i8,
+	_criteria: String,
+	_visual_id: i32,
+	_aps_id: i32,
+	_delay: i16,
+	_item_consumed: i32,
+	_item_quantity: i16,
+	_kama_cost: i16,
+	_do_consume_item: bool,
+	_is_invisible: bool,
+	_unknown: i32,
+	_loading_animation_name: String,
+	_loading_min_duration: i32,
+	_loading_fade_in_duration: i32,
+	_loading_fade_out_duration: i32
 }
 
 impl Destination {
 	pub fn read(document: &mut BinaryDocument) -> Self {
-		let destination_id = document.buffer.get_int();
-		let x = document.buffer.get_int();
-		let y = document.buffer.get_int();
-		let z = document.buffer.get_int();
+		let _destination_id = document.buffer.get_int();
+		let _x = document.buffer.get_int();
+		let _y = document.buffer.get_int();
+		let _z = document.buffer.get_int();
 		let world_id = document.buffer.get_int();
-		let direction = document.buffer.get_byte();
-		let criteria = document.buffer.read_utf8();
-		let visual_id = document.buffer.get_int();
-		let aps_id = document.buffer.get_int();
-		let delay = document.buffer.get_short();
-		let item_consumed = document.buffer.get_int();
-		let item_quantity = document.buffer.get_short();
-		let kama_cost = document.buffer.get_short();
-		let do_consume_item = document.buffer.read_boolean();
-		let is_invisible = document.buffer.read_boolean();
-		let unknown = document.buffer.get_int();
-		let loading_animation_name = document.buffer.read_utf8();
-		let loading_min_duration = document.buffer.get_int();
-		let loading_fade_in_duration = document.buffer.get_int();
-		let loading_fade_out_duration = document.buffer.get_int();
+		let _direction = document.buffer.get_byte();
+		let _criteria = document.buffer.read_utf8();
+		let _visual_id = document.buffer.get_int();
+		let _aps_id = document.buffer.get_int();
+		let _delay = document.buffer.get_short();
+		let _item_consumed = document.buffer.get_int();
+		let _item_quantity = document.buffer.get_short();
+		let _kama_cost = document.buffer.get_short();
+		let _do_consume_item = document.buffer.read_boolean();
+		let _is_invisible = document.buffer.read_boolean();
+		let _unknown = document.buffer.get_int();
+		let _loading_animation_name = document.buffer.read_utf8();
+		let _loading_min_duration = document.buffer.get_int();
+		let _loading_fade_in_duration = document.buffer.get_int();
+		let _loading_fade_out_duration = document.buffer.get_int();
 
 		Destination {
-			destination_id,
-			x,
-			y,
-			z,
+			_destination_id,
+			_x,
+			_y,
+			_z,
 			world_id,
-			direction,
-			criteria,
-			visual_id,
-			aps_id,
-			delay,
-			item_consumed,
-			item_quantity,
-			kama_cost,
-			do_consume_item,
-			is_invisible,
-			unknown,
-			loading_animation_name,
-			loading_min_duration,
-			loading_fade_in_duration,
-			loading_fade_out_duration
+			_direction,
+			_criteria,
+			_visual_id,
+			_aps_id,
+			_delay,
+			_item_consumed,
+			_item_quantity,
+			_kama_cost,
+			_do_consume_item,
+			_is_invisible,
+			_unknown,
+			_loading_animation_name,
+			_loading_min_duration,
+			_loading_fade_in_duration,
+			_loading_fade_out_duration
 		}
 	}
 }
