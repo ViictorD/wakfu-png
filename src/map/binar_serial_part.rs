@@ -19,16 +19,31 @@ pub trait BinarSerialPartsTrait {
 }
 
 #[derive(Debug)]
-pub struct GlobalDataPart;
+pub struct Action {
+	_action_id: i16,
+	_script_id: i32
+}
+
+#[derive(Debug)]
+pub struct GlobalDataPart {
+	_actions: Vec<Action>
+}
 
 impl BinarSerialPartsTrait for GlobalDataPart {
 	fn unserialize(mut buffer: ByteBuffer, _version: i32) -> Self {
 		let n_actions: i8 = buffer.read_i8().unwrap();
+		let mut _actions = Vec::with_capacity(n_actions as usize);
 		for _ in 0..n_actions {
 			let _action_id: i16 = buffer.read_i16().unwrap();
 			let _script_id: i32 = buffer.read_i32().unwrap();
+			_actions.push(Action {
+				_action_id,
+				_script_id
+			});
 		}
-		GlobalDataPart
+		GlobalDataPart {
+			_actions
+		}
 	}
 }
 

@@ -17,7 +17,7 @@ pub fn build_atlas(
 
 	let (min_x, max_y) = get_result_min_max_coord(&coords);
 
-	let origin = Vec2::new(min_x.abs(), max_y.abs());
+	let origin = Vec2::new(min_x * -1., max_y.abs());
 
 	let position = sprite_position - origin;
 	build_and_tint_altas(

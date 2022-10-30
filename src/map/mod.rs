@@ -14,6 +14,8 @@ pub mod sprite;
 pub mod color;
 pub mod environment;
 pub mod binar_serial_part;
+pub mod groups;
+pub mod layer_manager;
 
 pub const CELL_WIDTH: f32 = 86.;
 pub const CELL_HEIGHT: f32 = 43.;
@@ -31,9 +33,6 @@ impl Map {
 
 		for i in 0..archive.len() {
 			let mut file = archive.by_index(i)?;
-			// if file.name().ne("-1_-2") {
-			// 	continue;
-			// }
 			if file
 				.name()
 				.trim_matches(|c| char::is_numeric(c) || c == '-')

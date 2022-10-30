@@ -8,7 +8,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build_windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -36,3 +36,31 @@ jobs:
           asset_path: ./target/release/wakfu_png.exe
           asset_name: wakfu_png.exe
           asset_content_type: application/vnd.microsoft.portable-executable
+  build_linux:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions-rs/toolchain@v1
+          with:
+            toolchain: stable
+            default: true
+        - uses: Swatinem/rust-cache@v1
+        - uses: actions-rs/cargo@v1
+          with:
+            command: build
+            args: --release
+        - uses: crazy-max/ghaction-upx@v1
+          with:
+            version: latest
+            files: |
+              ./target/release/wakfu_png
+            args: -fq
+        - name: Upload the artifact
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ github.event.release.upload_url }}
+            asset_path: ./target/release/wakfu_png
+            asset_name: wakfu_png
+            asset_content_type: application/vnd.microsoft.portable-executable

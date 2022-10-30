@@ -60,6 +60,19 @@ impl ParticleSprite {
 	}
 }
 
+pub enum LayerOrder {
+	Ground,
+	InteractiveElement,
+	DynamicElement,
+	Particle
+}
+
+impl LayerOrder {
+	pub fn get_index(&self) -> u8 {
+		*self as u8
+	}
+}
+
 #[derive(Debug)]
 pub struct MapSprite {
 	pub cell_x: i32,
@@ -86,9 +99,10 @@ impl MapSprite {
 	}
 
 	#[inline]
-	pub fn hashcode(&self) -> i64 {
-		(self.altitude_order as i64 & 0x1FFFi64) << 6i64
-			| ((self.cell_x as i64 + 8192i64) & 0x3FFFi64) << 19i64
-			| ((self.cell_y as i64 + 8192i64) & 0x3FFFi64) << 34i64
+	pub fn hashcode(&self, delta_z: u8) -> i64 {
+		(self.cell_y as i64 + 8192 & 0x3FFF) << 34
+			| (self.cell_x as i64 + 8192 & 0x3FFF) << 19
+			| (self.altitude_order as i64 & 0x1FFF) << 6
+			| delta_z as i64
 	}
 }

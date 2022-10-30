@@ -31,4 +31,14 @@ impl MathHelper {
 		}
 		value
 	}
+
+	pub fn log2i(value: usize) -> usize {
+		let mut count = 1;
+		let mut c = 0;
+		while value > count {
+			count *= 2;
+			c += 1;
+		}
+		c
+	}
 }

@@ -11,7 +11,8 @@ impl SrgbColorSpace for f32 {
 
 		if self <= 0.0031308 {
 			self * 12.92 // linear falloff in dark values
-		} else {
+		}
+		else {
 			(1.055 * self.powf(1.0 / 2.4)) - 0.055 // gamma curve in other area
 		}
 	}

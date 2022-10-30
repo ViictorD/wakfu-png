@@ -1,7 +1,6 @@
 use byte::{TryRead, BytesExt};
 use byte::ctx::{Endian, Str};
 use anyhow::{anyhow, Result};
-use std::mem::size_of;
 use std::io::{Read, Seek};
 use std::str::FromStr;
 use super::binar_serial_part::{BinarSerialParts, BinarSerialPartsEnum};
@@ -260,44 +259,44 @@ impl<'a> TryRead<'a> for Environment {
 
 		// Particle data
 		let num_particle_system: u8 = bytes.read(offset)?;
-		let mut particle_data: Vec<ParticleDef> = Vec::with_capacity(num_particle_system as usize * size_of::<ParticleDef>());
-		for _ in 0..num_particle_system {
-			particle_data.push(bytes.read(offset)?);
-		}
+		let particle_data: Vec<ParticleDef> = bytes
+			.read_iter(offset, ())
+			.take(num_particle_system as usize)
+			.collect();
 		
 		// Sound
 		let num_sounds: u8 = bytes.read(offset)?;
-		let mut _sound_data: Vec<Sound> = Vec::with_capacity(num_sounds as usize * size_of::<Sound>());
-		for _ in 0..num_sounds {
-			_sound_data.push(bytes.read(offset)?);
-		}
+		let _sound_data: Vec<Sound> = bytes
+			.read_iter(offset, ())
+			.take(num_sounds as usize)
+			.collect();
 		
 		// Ambiance
 		let num_ambiance_id: u8 = bytes.read(offset)?;
-		let mut _ambiances_id: Vec<i32> = Vec::with_capacity(num_ambiance_id as usize * size_of::<i32>());
-		for _ in 0..num_ambiance_id {
-			_ambiances_id.push(bytes.read(offset)?);
-		}
+		let _ambiances_id: Vec<i32> = bytes
+			.read_iter(offset, Endian::default())
+			.take(num_ambiance_id as usize)
+			.collect();
 
 		let size: u8 = bytes.read(offset)?;
-		let mut _ambiances: Vec<u8> = Vec::with_capacity(size as usize * size_of::<u8>());
-		for _ in 0..size {
-			_ambiances.push(bytes.read(offset)?);
-		}
+		let _ambiances: Vec<u8> = bytes
+			.read_iter(offset, Endian::default())
+			.take(size as usize)
+			.collect();
 
 		// Interactive elements
 		let num_interactive_elt: u8 = bytes.read(offset)?;
-		let mut interactive_elements: Vec<InteractiveElement> = Vec::with_capacity(num_interactive_elt as usize * size_of::<InteractiveElement>());
-		for _ in 0..num_interactive_elt {
-			interactive_elements.push(bytes.read(offset)?);
-		}
+		let interactive_elements: Vec<InteractiveElement> = bytes
+			.read_iter(offset, ())
+			.take(num_interactive_elt as usize)
+			.collect();
 
 		// Dynamic elements
 		let num_dynamic_elt: u8 = bytes.read(offset)?;
-		let mut dynamic_elements: Vec<DynamicElementDef> = Vec::with_capacity(num_interactive_elt as usize * size_of::<DynamicElementDef>());
-		for _ in 0..num_dynamic_elt {
-			dynamic_elements.push(bytes.read(offset)?);
-		}
+		let dynamic_elements: Vec<DynamicElementDef> = bytes
+			.read_iter(offset, ())
+			.take(num_dynamic_elt as usize)
+			.collect();
 
 		let result = Environment {
 			x,
