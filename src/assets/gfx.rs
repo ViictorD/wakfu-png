@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
 use std::path::{Path, PathBuf};
@@ -15,7 +16,10 @@ use crate::anm::processing::anm_instance::{AnmInstance, self};
 use crate::anm::sprite_definition::sprite_def;
 use crate::assets::build_atlas::build_atlas;
 use crate::map::element::{MapElement};
+use crate::map::light::MapLight;
 use crate::map::sprite::{AnmSprite, MapSprite, DynamicSprite, ParticleSprite};
+use crate::paper::Paper;
+use crate::paper::render_paper::RenderPaperData;
 use crate::particles::particle_system::ParticleSystem;
 use crate::particles::particle_system_loader::ParticleSystemLoader;
 use crate::lib::custom_imageops::color::BlendModes;
@@ -27,11 +31,20 @@ pub struct Gfx {
 	gfx_archive: zip::ZipArchive<BufReader<File>>,
 	interactive_archive: zip::ZipArchive<BufReader<File>>,
 	dynamic_archive: zip::ZipArchive<BufReader<File>>,
-	particles_archive: zip::ZipArchive<BufReader<File>>
+	particles_archive: zip::ZipArchive<BufReader<File>>,
+	paper_archive: zip::ZipArchive<BufReader<File>>
+}
+
+enum GfxArchive {
+	Gfx,
+	Interactive,
+	Dynamic,
+	Particles,
+	Paper
 }
 
 impl Gfx {
-	pub fn load(gfx: File, interactive: File, dynamic: File, particles: File) -> Self {
+	pub fn load(gfx: File, interactive: File, dynamic: File, particles: File, paper_archive: File) -> Self {
 		let gfx_archive =
 			ZipArchive::new(BufReader::new(gfx)).unwrap();
 		let interactive_archive =
@@ -40,15 +53,18 @@ impl Gfx {
 			ZipArchive::new(BufReader::new(dynamic)).unwrap();
 		let particles_archive =
 			ZipArchive::new(BufReader::new(particles)).unwrap();
+		let paper_archive =
+			ZipArchive::new(BufReader::new(paper_archive)).unwrap();
 		return Gfx {
 			gfx_archive,
 			interactive_archive,
 			dynamic_archive,
-			particles_archive
+			particles_archive,
+			paper_archive
 		}
 	}
 
-	pub fn load_texture_as_rgba_image(&mut self, element: &MapElement, sprite: &MapSprite) -> Result<RgbaImage> {
+	pub fn load_texture_as_rgba_image(&mut self, element: &MapElement, sprite: &MapSprite, map_light: &MapLight) -> Result<RgbaImage> {
 		let texture_id = element.texture_id;
 
 		if let Ok(mut entry) = self.gfx_archive.by_name(&format!("gfx/{texture_id}.tgam")) {
@@ -73,12 +89,15 @@ impl Gfx {
 							imageops::flip_horizontal_in_place(&mut result);
 						}
 
+						let mut color = [sprite.color.r(), sprite.color.g(), sprite.color.b()];
+						map_light.apply(sprite.cell_x, sprite.cell_y, sprite.layer as i32, &mut color);
+
 						for Rgba([r, g, b, a]) in result.pixels_mut() {
 							// Apply color tint
 							if *a > 0 {
-								*r = (sprite.color.r() * *r as f32) as u8;
-								*g = (sprite.color.g() * *g as f32) as u8;
-								*b = (sprite.color.b() * *b as f32) as u8;
+								*r = (color[0] * *r as f32) as u8;
+								*g = (color[1] * *g as f32) as u8;
+								*b = (color[2] * *b as f32) as u8;
 								*a = (sprite.color.a() * *a as f32) as u8;
 							}
 						}
@@ -103,13 +122,13 @@ impl Gfx {
 		
 		let mut animation_name = format!("{}_AnimStatique_{}", anm_sprite.direction, anm_sprite.state);
 
-		self.get_anm_image(anm, &animation_name, true)
+		self.get_anm_image(anm, &animation_name, &GfxArchive::Interactive)
 	}
 
 	pub fn load_dynamic_texture_as_rgba_image(&mut self, dyn_sprite: &DynamicSprite) -> Result<(RgbaImage, Option<RgbaImage>, AnmInstance)> {
 		let gfx_id = dyn_sprite.gfx_id;
 	
-		let anm = self.read_dynamic_anm(format!("{gfx_id}.anm"))?;
+		let anm = self.read_anm_by_name(format!("{gfx_id}.anm"), &GfxArchive::Dynamic)?;
 
 		let mut animation_name = String::default();
 		
@@ -125,7 +144,7 @@ impl Gfx {
 			}
 		}
 
-		self.get_anm_image(anm, &animation_name, false)
+		self.get_anm_image(anm, &animation_name, &GfxArchive::Dynamic)
 	}
 
 	pub fn load_particle_system_and_tga(&mut self, particle_sprite: &ParticleSprite, system_coord: Vec3) -> Result<(ParticleSystemLoader, RgbaImage)> {
@@ -164,17 +183,72 @@ impl Gfx {
 		Err(anyhow!("TGA file not found: {}", texture_id))
 	}
 
-	fn read_dynamic_anm(&mut self, anm_file: String) -> Result<InteractiveAnim> {
-		if let Ok(mut entry) = self.dynamic_archive.by_name(anm_file.as_str()) {
-			return Self::read_anm(&mut entry);
+	pub fn load_paper_as_rgba_images(&mut self, paper: &Paper) -> Result<HashMap<i32, Vec<RenderPaperData>>> {
+
+		let bytes =
+			if let Ok(mut entry) = self.paper_archive.by_name("WorldMap.anm") {
+				let mut bytes = Vec::with_capacity(entry.size() as usize);
+				entry.read_to_end(&mut bytes)?;
+				bytes
+			}
+			else { return Err(anyhow!("ANM file not found: WorldMap.anm")) };
+
+		let mut result = HashMap::new();
+		for (id, group) in &paper.maps {
+			if !result.contains_key(id) {
+				result.insert(*id, Vec::new());
+			}
+			for coord in &group.coords {
+				if coord.anim_name_1.is_empty() {
+					continue ;
+				}
+				let mut buffer = ByteBuffer::from_vec(bytes.clone());
+				buffer.set_endian(Endian::LittleEndian);
+				let mut anm = InteractiveAnim::new();
+				anm.read(buffer);
+
+				let animation_name = format!("1_{}", coord.anim_name_1);
+				let (atlas, atlas_2, anm_instace) =
+					self.get_anm_image(anm, &animation_name, &GfxArchive::Paper)?;
+				let paper_data = RenderPaperData {
+					atlas,
+					atlas_2,
+					anm_instance: anm_instace,
+					id: coord.id,
+					start_coords: Vec2::new(coord.start_x as f32, coord.start_y as f32),
+					end_coords: Vec2::new(coord.end_x as f32, coord.end_y as f32),
+				};
+				result.get_mut(id).unwrap().push(paper_data);
+			}
 		}
-		if let Ok(mut entry) = self.interactive_archive.by_name(anm_file.as_str()) {
-			return Self::read_anm(&mut entry);
-		}
-		Err(anyhow!("ANM file not found: {anm_file}"))
+		Ok(result)
 	}
 
-	fn read_anm(entry: &mut ZipFile) -> Result<InteractiveAnim> {
+	fn read_anm_by_name(&mut self, anm_file: String, archive_type: &GfxArchive) -> Result<InteractiveAnim> {
+		match archive_type {
+			GfxArchive::Interactive => {
+				match self.interactive_archive.by_name(&anm_file) {
+					Ok(mut entry) => return Ok(Self::read_anm(&mut entry)?),
+					Err(_) => return Err(anyhow!("ANM file not found: {}", anm_file))
+				};
+			},
+			GfxArchive::Dynamic => {
+				match self.dynamic_archive.by_name(&anm_file) {
+					Ok(mut entry) => return Ok(Self::read_anm(&mut entry)?),
+					Err(_) => return Err(anyhow!("ANM file not found: {}", anm_file))
+				};
+			},
+			GfxArchive::Paper => {
+				match self.paper_archive.by_name(&anm_file) {
+					Ok(mut entry) => return Ok(Self::read_anm(&mut entry)?),
+					Err(_) => return Err(anyhow!("ANM file not found: {}", anm_file))
+				};
+			}
+			_ => Err(anyhow!("ANM file not found: {anm_file}"))
+		}
+	}
+
+	pub fn read_anm(entry: &mut ZipFile) -> Result<InteractiveAnim> {
 		let mut bytes = Vec::with_capacity(entry.size() as usize);
 		entry.read_to_end(&mut bytes)?;
 		let mut buffer = ByteBuffer::from_vec(bytes);
@@ -184,7 +258,7 @@ impl Gfx {
 		Ok(anm)
 	}
 
-	fn get_anm_image(&mut self, anm: InteractiveAnim, animation_name: &String, is_interactive: bool) -> Result<(RgbaImage, Option<RgbaImage>, AnmInstance)>{
+	fn get_anm_image(&mut self, anm: InteractiveAnim, animation_name: &String, archive_type: &GfxArchive) -> Result<(RgbaImage, Option<RgbaImage>, AnmInstance)> {
 		let mut anm_instance = AnmInstance::new(anm);
 		let flipped_anim_name = anm_instance.get_flipped_anim_name(animation_name);
 		if !animation_name.eq(&flipped_anim_name) {
@@ -200,7 +274,7 @@ impl Gfx {
 		}
 		else {
 			let anm_file = anm_instance.definition.index.file_names.get(file_record.file_index as usize).unwrap();
-			let anm = self.read_dynamic_anm(anm_file.clone()).unwrap();
+			let anm = self.read_anm_by_name(anm_file.clone(), archive_type).unwrap();
 
 			anm_instance.max_sprite_count = anm.max_sprite_count;
 			anm_instance.crc_animation = anm.index.get_animation_file_record(&flipped_anim_name).crc;
@@ -218,17 +292,26 @@ impl Gfx {
 		{
 			let texture_name = &anm_instance.definition.texture_name;
 			let atlas_entry_opt =
-				if is_interactive { self.interactive_archive.by_name(&format!("Atlas/{texture_name}.png")) }
-				else { self.dynamic_archive.by_name(&format!("Atlas/{texture_name}.png")) };
+				match archive_type {
+					GfxArchive::Interactive => self.interactive_archive.by_name(&format!("Atlas/{texture_name}.png")),
+					GfxArchive::Dynamic => self.dynamic_archive.by_name(&format!("Atlas/{texture_name}.png")),
+					GfxArchive::Paper => self.paper_archive.by_name(&format!("Atlas/{texture_name}.png")),
+					_ => return Err(anyhow!("Invalid archive type"))
+				};
 			atlas = Self::get_atlas(atlas_entry_opt, texture_name)?;
 		}
 
 		let mut atlas_2 = None;
 		if anm_instance.animation.is_some() {
 			let texture_name = &anm_instance.animation.as_ref().unwrap().texture_name;
+
 			let atlas_entry_opt_2 =
-				if is_interactive { Some(self.interactive_archive.by_name(&format!("Atlas/{}.png", texture_name))) }
-				else { Some(self.dynamic_archive.by_name(&format!("Atlas/{}.png", texture_name))) };
+				match archive_type {
+					GfxArchive::Interactive => Some(self.interactive_archive.by_name(&format!("Atlas/{texture_name}.png"))),
+					GfxArchive::Dynamic => Some(self.dynamic_archive.by_name(&format!("Atlas/{texture_name}.png"))),
+					GfxArchive::Paper => Some(self.paper_archive.by_name(&format!("Atlas/{texture_name}.png"))),
+					_ => return Err(anyhow!("Invalid archive type"))
+				};
 			atlas_2 = Some(Self::get_atlas(atlas_entry_opt_2.unwrap(), texture_name)?);
 		}
 

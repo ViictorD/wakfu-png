@@ -1,6 +1,6 @@
 [package]
 name = "wakfu_png"
-version = "0.5.0"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
@@ -14,6 +14,7 @@ image = "0.24.3"
 bytebuffer-rs = "0.4.0"
 imageproc = "0.23.0"
 rand = "0.8.5"
+xml-rs = "0.8.4"
 
 [dependencies.zip]
 version = "0.6"

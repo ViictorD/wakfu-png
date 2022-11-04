@@ -842,7 +842,7 @@ checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 
 [[package]]
 name = "wakfu_png"
-version = "0.5.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "byte",
@@ -855,6 +855,7 @@ dependencies = [
  "num-traits",
  "pico-args",
  "rand 0.8.5",
+ "xml-rs",
  "zip",
 ]
 
@@ -939,6 +940,12 @@ dependencies = [
  "bytemuck",
  "safe_arch",
 ]
+
+[[package]]
+name = "xml-rs"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
 
 [[package]]
 name = "zip"

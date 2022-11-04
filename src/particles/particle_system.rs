@@ -38,7 +38,6 @@ impl ParticleSystem {
 	pub fn load(&mut self, particle_system_loader: ParticleSystemLoader) {
 		self.geocentric = particle_system_loader.geocentric;
 		self.root.geocentric = particle_system_loader.geocentric;
-		// Muste apply night color: TODO
 		self.texture_id = particle_system_loader.texture_id;
 		self.src_blend = BlendModes::from_index(particle_system_loader.src_blend).unwrap();
 		self.dst_blend = BlendModes::from_index(particle_system_loader.dst_blend).unwrap();

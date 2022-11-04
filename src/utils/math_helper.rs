@@ -41,4 +41,16 @@ impl MathHelper {
 		}
 		c
 	}
+
+	pub fn get_int_from_two_int(a: i32, b: i32) -> i32 {
+		(a << 16) | (b & 0xFFFF)
+	}
+
+	pub fn fast_floor(value: f32) -> i32 {
+		let v = value as i32;
+		if value >= 0. || v as f32 == value {
+			return v;
+		}
+		v - 1
+	}
 }

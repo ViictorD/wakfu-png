@@ -15,6 +15,7 @@ use crate::lib::custom_imageops;
 use crate::lib::custom_imageops::color::BlendModes;
 use crate::map::groups::Groups;
 use crate::map::layer_manager::LayerManager;
+use crate::map::light::MapLight;
 use crate::map::{CELL_WIDTH, CELL_HEIGHT, Map};
 use crate::map::binar_serial_part::BinarSerialPartsEnum;
 use crate::map::color::Color;
@@ -33,6 +34,9 @@ fn convert_interactive_as_sprite(env: &EnvironmentChunk, iem: &HashMap<i32, Inte
 			for interactive_data in interactive.data.get_data() {
 				for view in &interactive.views {
 					if let BinarSerialPartsEnum::SpecificDataPart(specific_data_part) = interactive_data {
+						if !specific_data_part.visible {
+							continue ;
+						}
 						let bin_data = iem.get(view).unwrap();
 						let mut sprite = MapSprite {
 							cell_x: specific_data_part.x,
@@ -229,6 +233,7 @@ fn get_teleporters_id(
 pub fn create_png(
 	map_id: i32,
 	map: Map,
+	map_light: &MapLight,
 	lib: &ElementLibrary,
 	gfx: &mut Gfx,
 	env: EnvironmentChunk,
@@ -246,13 +251,13 @@ pub fn create_png(
 		}
 	}
 
-	// // Interactive elements
+	// Interactive elements
 	let interactive_sprites = convert_interactive_as_sprite(&env, &iem);
 	for sprite in interactive_sprites.iter() {
 		sorted_sprite.insert(sprite.hashcode(LayerOrder::InteractiveElement.get_index()), sprite);
 	}
 
-	// // Dynamic elements
+	// Dynamic elements
 	let dynamic_sprites = convert_dynamic_as_sprite(&env);
 	for sprite in dynamic_sprites.iter() {
 		sorted_sprite.insert(sprite.hashcode(LayerOrder::DynamicElement.get_index()), sprite);
@@ -385,7 +390,7 @@ pub fn create_png(
 				continue ;
 			}
 
-			let res = gfx.load_texture_as_rgba_image(&element, &sprite);
+			let res = gfx.load_texture_as_rgba_image(&element, &sprite, &map_light);
 			if let Err(err) = res {
 				println!("{}", err);
 				continue;
@@ -427,7 +432,9 @@ pub fn recursive_create_png(
 		}
 		let map_path = maps_path.join("gfx").join(format!("{}.jar", world));
 		let env_path = maps_path.join("env").join(format!("{}.jar", world));
+		let light_path = maps_path.join("light").join(format!("{}.jar", world));
 		let map = Map::load(File::open(map_path)?)?;
+		let light_map = MapLight::load(File::open(light_path)?)?;
 		let env = EnvironmentChunk::load(File::open(env_path)?)?;
 		let map_teleporters_id = get_teleporters_id(&env);
 		
@@ -449,7 +456,7 @@ pub fn recursive_create_png(
 		let visible_layers =
 			if groups.is_some() { Some(LayerManager::get_outdoor_visible_layers(&map, &groups.as_ref().unwrap(), &tplg.as_ref().unwrap())) }
 			else { None };
-		create_png(world, map, lib, gfx, env, iem_data, visible_layers, str_output_path)?;
+		create_png(world, map, &light_map, lib, gfx, env, iem_data, visible_layers, str_output_path)?;
 		processed_map.push(world);
 		if new_worlds_id.len() > 0 {
 			println!("\nNext maps to process: {:?}\n", new_worlds_id);

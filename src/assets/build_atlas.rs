@@ -66,7 +66,7 @@ fn get_dest_pts(final_coord: &[f32; 8], sprite_orientation: &SpriteOrientation) 
 	result
 }
 
-fn get_transformed_size(points: &[[f32; 2]; 4]) -> (i32, i32) {
+pub fn get_transformed_size(points: &[[f32; 2]; 4]) -> (i32, i32) {
 	let mut min_x = f32::MAX;
 	let mut min_y = f32::MAX;
 	let mut max_x = f32::MIN;
@@ -180,7 +180,7 @@ fn get_sprite_points(final_coord: &[f32; 8], sprite_orientation: &SpriteOrientat
 	[top_right, bottom_right, bottom_left, top_left]
 }
 
-fn create_perspective_transform_matrix(pts_src: &[[f32; 2]; 4], pts_dst: &[[f32; 2]; 4]) -> Result<[f32; 9]> {
+pub fn create_perspective_transform_matrix(pts_src: &[[f32; 2]; 4], pts_dst: &[[f32; 2]; 4]) -> Result<[f32; 9]> {
 	let mut a: [[f64; 8]; 8] = [[0.; 8]; 8];
 	let mut b: [f64; 9] = [0.; 9];
 

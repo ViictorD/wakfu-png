@@ -23,11 +23,11 @@ impl DataContainer {
 #[derive(Clone)]
 pub struct I8Container {
 	cur: i32,
-	data: Vec<i8>
+	data: Vec<u8>
 }
 
 impl I8Container {
-	fn new(data: Vec<i8>) -> Self {
+	fn new(data: Vec<u8>) -> Self {
 		I8Container {
 			cur: 0,
 			data
@@ -48,11 +48,11 @@ impl I8Container {
 #[derive(Clone)]
 pub struct I16Container {
 	cur: i32,
-	data: Vec<i16>
+	data: Vec<u16>
 }
 
 impl I16Container {
-	fn new(data: Vec<i16>) -> Self {
+	fn new(data: Vec<u16>) -> Self {
 		I16Container {
 			cur: 0,
 			data
@@ -73,11 +73,11 @@ impl I16Container {
 #[derive(Clone)]
 pub struct I32Container {
 	cur: i32,
-	data: Vec<i32>
+	data: Vec<u32>
 }
 
 impl I32Container {
-	fn new(data: Vec<i32>) -> Self {
+	fn new(data: Vec<u32>) -> Self {
 		I32Container {
 			cur: 0,
 			data
@@ -105,21 +105,21 @@ impl AnmFrameData {
 			1 => {
 				let mut data = Vec::with_capacity(size as usize);
 				for _ in 0..size {
-					data.push(buffer.read_i8()?);
+					data.push(buffer.read_u8()?);
 				}
 				Ok(DataContainer::I8(I8Container::new(data)))
 			},
 			2 => {
 				let mut data = Vec::with_capacity(size as usize);
 				for _ in 0..size {
-					data.push(buffer.read_i16()?);
+					data.push(buffer.read_u16()?);
 				}
 				Ok(DataContainer::I16(I16Container::new(data)))
 			}
 			4 => {
 				let mut data = Vec::with_capacity(size as usize);
 				for _ in 0..size {
-					data.push(buffer.read_i32()?);
+					data.push(buffer.read_u32()?);
 				}
 				Ok(DataContainer::I32(I32Container::new(data)))
 			}

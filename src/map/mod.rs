@@ -16,6 +16,7 @@ pub mod environment;
 pub mod binar_serial_part;
 pub mod groups;
 pub mod layer_manager;
+pub mod light;
 
 pub const CELL_WIDTH: f32 = 86.;
 pub const CELL_HEIGHT: f32 = 43.;
