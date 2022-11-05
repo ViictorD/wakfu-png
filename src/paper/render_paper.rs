@@ -5,7 +5,7 @@ use image::{RgbaImage, Rgba};
 
 use super::{Paper, anm_coords::FullMapCoord};
 
-use crate::{assets::build_atlas::{create_perspective_transform_matrix, get_transformed_size, build_and_tint_altas}, anm::processing::anm_instance::{AnmInstance, SpriteCoord}, lib::custom_imageops::color::BlendModes};
+use crate::{assets::build_atlas::{create_perspective_transform_matrix, get_transformed_size, build_and_tint_altas}, anm::processing::anm_instance::{AnmInstance, SpriteCoord}, custom_lib::custom_imageops::color::BlendModes};
 
 pub struct RenderPaperData {
 	pub atlas: RgbaImage,

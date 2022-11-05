@@ -1,6 +1,6 @@
 use glam::Vec3;
 
-use crate::{lib::custom_imageops::color::BlendModes, anm::processing::anm_instance::SpriteCoord, map::{ELEVATION_UNIT, CELL_WIDTH, CELL_HEIGHT}};
+use crate::{custom_lib::custom_imageops::color::BlendModes, anm::processing::anm_instance::SpriteCoord, map::{ELEVATION_UNIT, CELL_WIDTH, CELL_HEIGHT}};
 
 use super::{
 	rotation_matrix::RotationMatrix,

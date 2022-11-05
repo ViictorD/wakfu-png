@@ -22,7 +22,7 @@ use crate::paper::Paper;
 use crate::paper::render_paper::RenderPaperData;
 use crate::particles::particle_system::ParticleSystem;
 use crate::particles::particle_system_loader::ParticleSystemLoader;
-use crate::lib::custom_imageops::color::BlendModes;
+use crate::custom_lib::custom_imageops::color::BlendModes;
 
 use super::build_particle;
 use super::tga::{Tga, TgaLoader};

@@ -69,7 +69,12 @@ pub enum LayerOrder {
 
 impl LayerOrder {
 	pub fn get_index(&self) -> u8 {
-		*self as u8
+		match self {
+			Self::Ground => 0,
+			Self::InteractiveElement => 1,
+			Self::DynamicElement => 2,
+			Self::Particle => 3
+		}
 	}
 }
 

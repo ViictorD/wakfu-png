@@ -2,7 +2,7 @@ use glam::Vec2;
 use image::{RgbaImage};
 
 use crate::{
-	anm::processing::anm_instance::SpriteCoord, lib::custom_imageops::color::BlendModes
+	anm::processing::anm_instance::SpriteCoord, custom_lib::custom_imageops::color::BlendModes
 };
 
 use super::build_atlas::{get_result_min_max_coord, build_and_tint_altas};

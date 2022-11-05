@@ -2,8 +2,8 @@ use anyhow::{anyhow, Result};
 use glam::Vec2;
 use image::{RgbaImage, imageops, Rgba};
 use crate::anm::processing::anm_instance::{AnmInstance, SpriteCoord};
-use crate::lib::custom_imageops;
-use crate::lib::custom_imageops::color::BlendModes;
+use crate::custom_lib::custom_imageops;
+use crate::custom_lib::custom_imageops::color::BlendModes;
 
 pub fn build_atlas(
 	result: &mut RgbaImage,
