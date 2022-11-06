@@ -104,6 +104,27 @@ impl FullMapCoord {
 		// Dimension Osamodas
 		tmp.push(Coord { id: 1276, coord: Vec2::new(16., 34.) });
 		coords.insert(-3, tmp);
+
+		// -5
+		tmp = Vec::with_capacity(8);
+		// Mont Zinit
+		tmp.push(Coord { id: 0, coord: Vec2::new(30., 30.) });
+		// Plage du Zinit
+		tmp.push(Coord { id: 986, coord: Vec2::new(60., 78.) });
+		// Plage sauvage
+		tmp.push(Coord { id: 1118, coord: Vec2::new(77., 56.) });
+		// Grotte Slek
+		tmp.push(Coord { id: 1119, coord: Vec2::new(62., 46.) });
+		// Bas Flancs
+		tmp.push(Coord { id: 1120, coord: Vec2::new(40., 47.) });
+		// Grotte du Dor'Mor
+		tmp.push(Coord { id: 1123, coord: Vec2::new(18., 12.) });
+		// Haut-Flancs
+		tmp.push(Coord { id: 1122, coord: Vec2::new(27., 21.) });
+		// Sommet
+		tmp.push(Coord { id: 1124, coord: Vec2::new(3., 6.) });
+		coords.insert(-5, tmp);
+		
 	
 		// -6
 		tmp = Vec::with_capacity(9);
@@ -134,9 +155,11 @@ impl FullMapCoord {
 	}
 
 	pub fn get_coord(&self, id: &i32, id2: &i32) -> Result<&Vec2> {
-		for coord in self.coords.get(&id).unwrap() {
-			if coord.id == *id2 {
-				return Ok(&coord.coord);
+		if let Some(lst_coord) = self.coords.get(&id) {
+			for coord in lst_coord {
+				if coord.id == *id2 {
+					return Ok(&coord.coord);
+				}
 			}
 		}
 		Err(anyhow!("Coord not found"))

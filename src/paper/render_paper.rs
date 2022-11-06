@@ -5,7 +5,7 @@ use image::{RgbaImage, Rgba};
 
 use super::{Paper, anm_coords::FullMapCoord};
 
-use crate::{assets::build_atlas::{create_perspective_transform_matrix, get_transformed_size, build_and_tint_altas}, anm::processing::anm_instance::{AnmInstance, SpriteCoord}, custom_lib::custom_imageops::color::BlendModes};
+use crate::{assets::build_atlas::{create_perspective_transform_matrix, build_and_tint_altas}, anm::processing::anm_instance::{AnmInstance, SpriteCoord}, custom_lib::custom_imageops::color::BlendModes};
 
 pub struct RenderPaperData {
 	pub atlas: RgbaImage,
@@ -25,7 +25,7 @@ pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {
 		}
 		let mut result = transform_bg(&paper_group.texture);
 		let ratio_x = result.width() as f32 / 100.;
-		let ratio_y = result.height() as f32 / 100.;
+		let ratio_y = result.height() as f32 / 2. / 100.;
 		for paper_data in data.get(&id).unwrap() {
 			let coords = paper_data.anm_instance.coords.clone();
 			let colors = paper_data.anm_instance.colors.clone();
@@ -35,13 +35,15 @@ pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {
 			if position_coord.is_err() {
 				continue ;
 			}
-			let sprite_position = iso_to_screen(
+
+			let mut sprite_position = iso_to_screen(
 				position_coord.as_ref().unwrap().x as f32,
 				position_coord.as_ref().unwrap().y as f32,
 				ratio_x,
 				ratio_y,
 				result.height() as f32
 			);
+			sprite_position.y -= result.height() as f32 / 4.;
 			let origin = Vec2::new((min_x.abs() + max_x.abs()) / 2., (min_y.abs() + max_y.abs()) / 2.);
 			let position = sprite_position - origin;
 			build_and_tint_altas(
@@ -56,8 +58,8 @@ pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {
 				(BlendModes::One, BlendModes::InvSrcAlpha),
 				paper_data.anm_instance.flip_animation
 			);
-			result.save_with_format(format!("./output/{id}.png"), image::ImageFormat::Png).unwrap();
 		}
+		result.save_with_format(format!("./output/{id}.png"), image::ImageFormat::Png).unwrap();
 	}
 }
 
@@ -148,16 +150,15 @@ fn transform_bg(image: &RgbaImage) -> RgbaImage{
 	];
 
 	let pts_dst = [
-		[scaled_width / 2., 0.],
-		[scaled_width, scaled_height / 2. - height_quarter],
-		[scaled_width / 2., height_quarter * 3. - height_quarter],
-		[0., scaled_height / 2. - height_quarter]
+		[scaled_width / 2., height_quarter],
+		[scaled_width, scaled_height / 2.],
+		[scaled_width / 2., height_quarter * 3.],
+		[0., scaled_height / 2.]
 	];
 
 	let matrix = create_perspective_transform_matrix(&pts_src, &pts_dst).unwrap();
 	let projection = imageproc::geometric_transformations::Projection::from_matrix(matrix).unwrap();
-	let (trans_width, trans_height) = get_transformed_size(&pts_dst);
-	let mut result = RgbaImage::new(trans_width as u32, trans_height as u32);
+	let mut result = RgbaImage::new(scaled_width.ceil() as u32, scaled_height.ceil() as u32);
 	imageproc::geometric_transformations::warp_into(
 		&image,
 		&projection,
