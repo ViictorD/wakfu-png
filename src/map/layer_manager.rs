@@ -41,6 +41,7 @@ impl LayerManager {
 					}
 				}
 			}
+
 			// We check for every layers in the group, the ones that show the less outside layers,
 			// and that are walkable. The resut layer(s) should be the floor of the inside.
 			// From this result, we can find out wich outside layers to display
@@ -70,6 +71,7 @@ impl LayerManager {
 					}
 				}
 			}
+
 			let mut min = (0, u16::MAX);
 			for (key, value) in &exterior_layers_counter {
 				if *value == 0 {
@@ -80,22 +82,45 @@ impl LayerManager {
 				}
 			}
 
-			// This should get one of the 2 entry floor where we see inside and outside
-			let mut min_plus_one = (0, u16::MAX);
-			for (key, value) in exterior_layers_counter {
-				if value > min.1 && value < min_plus_one.1 {
-					min_plus_one = (key, value);
+			// We need to check if there is others same layers count for the case where
+			// one group_id is used for multiple differents houses
+			let mut mins = Vec::new();
+			for (key, value) in &exterior_layers_counter {
+				if *value == min.1 {
+					mins.push((*key, *value));
 				}
 			}
-			if min_plus_one.1 < negative_group_keys.len() as u16 {
-				min = min_plus_one;
+
+			// This should get one of the 2 entry floor where we see inside and outside
+			let mut min_plus_one = (0, u16::MAX);
+			for (key, value) in &exterior_layers_counter {
+				if *value > min.1 && *value < min_plus_one.1 {
+					min_plus_one = (*key, *value);
+				}
 			}
+
+			let mut mins_plus_one = Vec::new();
+			for (key, value) in &exterior_layers_counter {
+				if *value == min_plus_one.1 {
+					mins_plus_one.push((*key, *value));
+				}
+			}
+
+			if min_plus_one.1 < negative_group_keys.len() as u16 {
+				mins.append(&mut mins_plus_one);
+			}
+
 			for negative_key in &negative_group_keys {
 				if visible_layers.contains(&negative_key) {
 					continue ;
 				}
-				if groups.is_layer_visible(min.0, *negative_key) {
-					visible_layers.push(*negative_key);
+				for m in &mins {
+					if visible_layers.contains(&negative_key) {
+						continue ;
+					}
+					if groups.is_layer_visible(m.0, *negative_key) {
+						visible_layers.push(*negative_key);
+					}
 				}
 			}
 

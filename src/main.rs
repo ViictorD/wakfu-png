@@ -1,4 +1,4 @@
-use std::fs::{File, self};
+use std::fs::{File};
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -72,10 +72,6 @@ fn main() -> Result<()> {
 		File::open(paper_anm_path)?
 	);
 
-	let output_path = PathBuf::from("./output");
-	if !output_path.exists() {
-		fs::create_dir(output_path.clone())?;
-	}
 	if is_paper {
 		let paper_path = maps_path.join("paper").join("full.jar");
 		let paper = Paper::load(File::open(paper_path)?)?;
@@ -115,7 +111,6 @@ fn main() -> Result<()> {
 			&iem_data,
 			&groups,
 			&tplg,
-			output_path
 		)?;
 	}
 	else {
@@ -124,6 +119,12 @@ fn main() -> Result<()> {
 		let visible_layers = 
 			if is_indoor { Some(LayerManager::get_outdoor_visible_layers(&map, &groups.unwrap(), &tplg.unwrap())) }
 			else { None };
+
+		if visible_layers.is_some() && visible_layers.as_ref().unwrap().len() == 0 {
+			println!("No indoor to render, exiting.");
+			return Ok(());
+		}
+		let output_path = PathBuf::from("./output").join(map_id.to_string());
 
 		let env = EnvironmentChunk::load(File::open(env_path)?)?;
 		create_png(
@@ -135,7 +136,7 @@ fn main() -> Result<()> {
 			env,
 			&iem_data,
 			visible_layers,
-			output_path.clone().into_os_string().into_string().unwrap()
+			output_path
 		)?;
 	}
 	println!("Done");

@@ -239,7 +239,7 @@ pub fn create_png(
 	env: EnvironmentChunk,
 	iem: &HashMap<i32, InteractiveElementModelBinaryData>,
 	visible_layers: Option<Vec<i32>>,
-	output_path: String
+	mut output_path: PathBuf
 ) -> Result<()> {
 	println!("Processing {map_id}...");
 	let mut sorted_sprite: HashMap<i64, &MapSprite> = HashMap::new();
@@ -407,8 +407,17 @@ pub fn create_png(
 		}
 	}
 
-	println!("Saving into {}/{}.png...", output_path, map_id);
-	if let Err(err) = image.save_with_format(format!("{}/{}.png", output_path, map_id), image::ImageFormat::Png) {
+	output_path =
+		if visible_layers.is_some() { output_path.join("indoor") }
+		else { output_path.join("outdoor") };
+	if !output_path.exists() {
+		fs::create_dir_all(output_path.clone())?;
+	}
+	println!("Saving into {}/{}.png...", output_path.as_os_str().to_str().unwrap(), map_id);
+	if let Err(err) = image.save_with_format(
+		format!("{}/{}.png", output_path.as_os_str().to_str().unwrap(), map_id),
+		image::ImageFormat::Png
+	) {
 		println!("Failed to save image: {}", err);
 	}
 	Ok(())
@@ -424,7 +433,6 @@ pub fn recursive_create_png(
 	iem_data: &HashMap<i32, InteractiveElementModelBinaryData>,
 	groups: &Option<Groups>,
 	tplg: &Option<Tplg>,
-	output_path: PathBuf
 ) -> Result<()> {
 	for world in worlds_id {
 		if processed_map.contains(&world) {
@@ -449,18 +457,19 @@ pub fn recursive_create_png(
 				}
 			}
 		}
-		if !output_path.exists() {
-			fs::create_dir(output_path.clone())?;
-		}
-		let str_output_path = output_path.clone().into_os_string().into_string().unwrap();
 		let visible_layers =
 			if groups.is_some() { Some(LayerManager::get_outdoor_visible_layers(&map, &groups.as_ref().unwrap(), &tplg.as_ref().unwrap())) }
 			else { None };
-		create_png(world, map, &light_map, lib, gfx, env, iem_data, visible_layers, str_output_path)?;
+		if visible_layers.is_some() && visible_layers.as_ref().unwrap().len() == 0 {
+			println!("No indoor to render, skiping...");
+		}
+		else {
+			let output_path = PathBuf::from("./output").join(world.to_string());
+			create_png(world, map, &light_map, lib, gfx, env, iem_data, visible_layers, output_path)?;
+		}
 		processed_map.push(world);
 		if new_worlds_id.len() > 0 {
 			println!("\nNext maps to process: {:?}\n", new_worlds_id);
-			let new_output_path = output_path.join(world.to_string());
 			recursive_create_png(
 				processed_map,
 				new_worlds_id,
@@ -471,7 +480,6 @@ pub fn recursive_create_png(
 				iem_data,
 				groups,
 				tplg,
-				new_output_path
 			)?;
 		}
 	}
