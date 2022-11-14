@@ -176,17 +176,20 @@ fn get_margin_and_png_size(lib: &ElementLibrary, sorted_sprite: &HashMap<i64, &M
 	}
 
 	// Calculate the amount to add to remove negative coords
-	let margin = Vec2::new(
+	let mut margin = Vec2::new(
 		if min.x < 0. { min.x } else { 0. },
 		if min.y < 0. { min.y } else { 0. }
 	);
 
+	let extra_size = Vec2::new(500. , 500.);
+	margin -= extra_size / 2.;
+
 	(
 		margin,
 		Vec2::new(
-			max.x - margin.x + CELL_WIDTH,
-			max.y - margin.y + CELL_HEIGHT
-		)
+			max.x - margin.x,
+			max.y - margin.y
+		) + extra_size
 	)
 
 }
