@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use glam::Vec2;
 use image::{RgbaImage, Rgba};
@@ -59,7 +59,11 @@ pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {
 				paper_data.anm_instance.flip_animation
 			);
 		}
-		result.save_with_format(format!("./output/{id}.png"), image::ImageFormat::Png).unwrap();
+		let output_path = PathBuf::from(format!("./output/{id}/outdoor/{id}.png"));
+		if !output_path.exists() {
+			std::fs::create_dir_all(output_path.parent().unwrap()).unwrap();
+		}
+		result.save_with_format(output_path, image::ImageFormat::Png).unwrap();
 	}
 }
 

@@ -16,7 +16,7 @@ use crate::custom_lib::custom_imageops::color::BlendModes;
 use crate::map::groups::Groups;
 use crate::map::layer_manager::LayerManager;
 use crate::map::light::MapLight;
-use crate::map::{CELL_WIDTH, CELL_HEIGHT, Map};
+use crate::map::{Map};
 use crate::map::binar_serial_part::BinarSerialPartsEnum;
 use crate::map::color::Color;
 use crate::map::element::ElementLibrary;
