@@ -43,8 +43,8 @@ impl FullMapCoord {
 		tmp.push(Coord { id: 1137, coord: Vec2::new(42., 84.) });
 		// Sufokia
 		tmp.push(Coord { id: 1135, coord: Vec2::new(72., 72.) });
-		// Poup Island
-		tmp.push(Coord { id: 455, coord: Vec2::new(86., 57.) });
+		// Ereboria
+		tmp.push(Coord { id: -7, coord: Vec2::new(82., 53.) });
 		// Katrepat
 		tmp.push(Coord { id: 327, coord: Vec2::new(47., 61.) });
 		// Royaume Sadida
@@ -147,7 +147,23 @@ impl FullMapCoord {
 		// Zone 6 - Palais de rushu
 		tmp.push(Coord { id: 1332, coord: Vec2::new(18., 15.) });
 		coords.insert(-6, tmp);
-		
+
+		tmp = Vec::with_capacity(7);
+		// Volcano smoke
+		tmp.push(Coord { id: -1, coord: Vec2::new(30., 28.) });
+		// Hub - Port d'Ereboria
+		tmp.push(Coord { id: 1360, coord: Vec2::new(60., 61.5) });
+		// Plage des pirates
+		tmp.push(Coord { id: 1358, coord: Vec2::new(34., 67.) });
+		// Plage maudite
+		tmp.push(Coord { id: 1359, coord: Vec2::new(60., 32.) });
+		// Prison maritime
+		tmp.push(Coord { id: 1368, coord: Vec2::new(82., 82.) });
+		// Mine Néo-Sufkienne
+		tmp.push(Coord { id: 1365, coord: Vec2::new(71., 70.2) });
+		// Caverne des Marteaux-Aigris
+		tmp.push(Coord { id: 1364, coord: Vec2::new(37., 36.) });
+		coords.insert(-7, tmp);
 
 		FullMapCoord {
 			coords: coords

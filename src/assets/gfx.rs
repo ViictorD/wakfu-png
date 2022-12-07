@@ -64,7 +64,7 @@ impl Gfx {
 		}
 	}
 
-	pub fn load_texture_as_rgba_image(&mut self, element: &MapElement, sprite: &MapSprite, map_light: &MapLight) -> Result<RgbaImage> {
+	pub fn load_texture_as_rgba_image(&mut self, element: &MapElement, sprite: &MapSprite, map_light: &Option<MapLight>) -> Result<RgbaImage> {
 		let texture_id = element.texture_id;
 
 		if let Ok(mut entry) = self.gfx_archive.by_name(&format!("gfx/{texture_id}.tgam")) {
@@ -90,7 +90,9 @@ impl Gfx {
 						}
 
 						let mut color = [sprite.color.r(), sprite.color.g(), sprite.color.b()];
-						map_light.apply(sprite.cell_x, sprite.cell_y, sprite.layer as i32, &mut color);
+						if map_light.is_some() {
+							map_light.as_ref().unwrap().apply(sprite.cell_x, sprite.cell_y, sprite.layer as i32, &mut color);
+						}
 
 						for Rgba([r, g, b, a]) in result.pixels_mut() {
 							// Apply color tint

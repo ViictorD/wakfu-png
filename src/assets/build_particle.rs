@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use glam::Vec2;
 use image::{RgbaImage};
 
@@ -8,7 +10,7 @@ use crate::{
 use super::build_atlas::{get_result_min_max_coord, build_and_tint_altas};
 
 pub fn build_particle(
-	result: &mut RgbaImage,
+	result: &mut HashMap<u16, RgbaImage>,
 	sprite_position: Vec2,
 	atlas: RgbaImage,
 	particles_coords: Vec<SpriteCoord>,

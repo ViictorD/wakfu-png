@@ -61,6 +61,9 @@ impl MapLightChunk {
 		for _ in 0..count {
 			let k: u16 = bytes.read(offset)?;
 			let idx: u16 = bytes.read(offset)?;
+			if cell_light_def.len() < idx as usize {
+				return Err(byte::Error::BadOffset(*offset));
+			}
 			layer_colors.insert(k, cell_light_def[idx as usize].clone());
 		}
 
@@ -102,7 +105,7 @@ impl MapLight {
 				file.read_to_end(&mut buffer)?;
 				let chunk = buffer
 					.read(&mut 0)
-					.map_err(|err| anyhow!("Read error: {:?}", err))?;
+					.map_err(|err| anyhow!("[MapLight] Read error: {:?}", err))?;
 				chunks.insert(MathHelper::get_int_from_two_int(x, y) , chunk);
 			}
 		}

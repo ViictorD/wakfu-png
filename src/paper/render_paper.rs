@@ -23,9 +23,12 @@ pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {
 		if !full_coords.coords.contains_key(&id) {
 			continue ;
 		}
-		let mut result = transform_bg(&paper_group.texture);
-		let ratio_x = result.width() as f32 / 100.;
-		let ratio_y = result.height() as f32 / 2. / 100.;
+		let mut result = HashMap::with_capacity(1);
+		result.insert(0, transform_bg(&paper_group.texture));
+		let width = result.get(&0).unwrap().width() as f32;
+		let height = result.get(&0).unwrap().height() as f32;
+		let ratio_x = width / 100.;
+		let ratio_y = height / 2. / 100.;
 		for paper_data in data.get(&id).unwrap() {
 			let coords = paper_data.anm_instance.coords.clone();
 			let colors = paper_data.anm_instance.colors.clone();
@@ -41,9 +44,9 @@ pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {
 				position_coord.as_ref().unwrap().y as f32,
 				ratio_x,
 				ratio_y,
-				result.height() as f32
+				height
 			);
-			sprite_position.y -= result.height() as f32 / 4.;
+			sprite_position.y -= height / 4.;
 			let origin = Vec2::new((min_x.abs() + max_x.abs()) / 2., (min_y.abs() + max_y.abs()) / 2.);
 			let position = sprite_position - origin;
 			build_and_tint_altas(
@@ -63,7 +66,7 @@ pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {
 		if !output_path.exists() {
 			std::fs::create_dir_all(output_path.parent().unwrap()).unwrap();
 		}
-		result.save_with_format(output_path, image::ImageFormat::Png).unwrap();
+		result.get(&0).unwrap().save_with_format(output_path, image::ImageFormat::Png).unwrap();
 	}
 }
 

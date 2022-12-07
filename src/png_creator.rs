@@ -1,17 +1,17 @@
 use std::fs::{File, self};
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{Result};
 use glam::{const_vec2, Vec2, Vec3};
 use image::RgbaImage;
 use itertools::Itertools;
 use std::collections::HashMap;
 
+use crate::assets::build_atlas::overlay_on_result_images;
 use crate::assets::gfx::Gfx;
 use crate::assets::{build_particle, build_atlas};
 use crate::bdata::interactive_element_model_binary_data::InteractiveElementModelBinaryData;
 use crate::bdata::teleporter_binary_data::Destination;
-use crate::custom_lib::custom_imageops;
 use crate::custom_lib::custom_imageops::color::BlendModes;
 use crate::map::groups::Groups;
 use crate::map::layer_manager::LayerManager;
@@ -24,6 +24,7 @@ use crate::map::environment::EnvironmentChunk;
 use crate::map::sprite::{MapSprite, AnmSprite, ParticleSprite, DynamicSprite, LayerOrder};
 use crate::particles::particle_system::ParticleSystem;
 use crate::tplg::Tplg;
+use crate::utils::math_helper::MathHelper;
 
 const FLIP_Y: Vec2 = const_vec2!([1., -1.]);
 
@@ -233,10 +234,37 @@ fn get_teleporters_id(
 	map_teleporters_id
 }
 
+fn create_images(image_size: Vec2) -> HashMap<u16, RgbaImage> {
+	let mut images = HashMap::new();
+	let len = (image_size.x as u64).overflowing_mul(image_size.y as u64);
+	if len.1 || len.0 > 5_256_250_000 {
+		let nb_tile_x = (image_size.x / 70_000.) as u8 + 1;
+		let nb_tile_y = (image_size.y / 70_000.) as u8 + 1;
+		for x in 0..nb_tile_x {
+			for y in 0..nb_tile_y {
+				let mut width = 70_000;
+				let mut height = 70_000;
+				if x + 1 == nb_tile_x {
+					width = image_size.x as u32 % 70_000;
+				}
+				if y + 1 == nb_tile_y {
+					height = image_size.y as u32 % 70_000;
+				}
+				let key = MathHelper::get_u16_from_two_u8(x, y);
+				images.insert(key, RgbaImage::new(width, height));
+			}
+		}
+	}
+	else {
+		images.insert(0, RgbaImage::new(image_size.x as u32, image_size.y as u32));
+	}
+	images
+}
+
 pub fn create_png(
 	map_id: i32,
 	map: Map,
-	map_light: &MapLight,
+	map_light: &Option<MapLight>,
 	lib: &ElementLibrary,
 	gfx: &mut Gfx,
 	env: EnvironmentChunk,
@@ -274,10 +302,7 @@ pub fn create_png(
 
 	let (margin, image_size) = get_margin_and_png_size(&lib, &sorted_sprite);
 
-	let mut image = RgbaImage::new(
-		image_size.x as u32,
-		image_size.y as u32
-	);
+	let mut images = create_images(image_size);
 
 	// We display the other layers and interactive elements/dynamic/particles
 	for hashcode in sorted_sprite.keys().sorted() {
@@ -299,7 +324,7 @@ pub fn create_png(
 			let (atlas, atlas_2, anm_instance) = res.unwrap();
 
 			build_atlas::build_atlas(
-				&mut image,
+				&mut images,
 				sprite.screen_position() * FLIP_Y - margin,
 				atlas,
 				atlas_2,
@@ -324,7 +349,7 @@ pub fn create_png(
 			let (atlas, atlas_2, anm_instance) = res.unwrap();
 
 			build_atlas::build_atlas(
-				&mut image,
+				&mut images,
 				sprite.screen_position() * FLIP_Y - margin,
 				atlas,
 				atlas_2,
@@ -366,7 +391,7 @@ pub fn create_png(
 			let (particles_coords, particles_colors) = particle_system.get_particles_coords_and_colors();
 			let iso_offsets = ParticleSystem::get_screen_position(particle.offset_x as f32 / 100., particle.offset_y as f32 / 100., particle.offset_z as f32 / 10.);
 			build_particle::build_particle(
-				&mut image,
+				&mut images,
 				sprite.screen_position() * FLIP_Y - margin + Vec2::new(iso_offsets.0, iso_offsets.1) * FLIP_Y,
 				tga,
 				particles_coords,
@@ -399,14 +424,12 @@ pub fn create_png(
 				continue;
 			}
 			let vec2 = sprite.screen_position() * FLIP_Y - element.origin();
-			custom_imageops::custom_overlay(
-				&mut image,
-				&res.unwrap(),
+			overlay_on_result_images(
+				&mut images,
+				res.unwrap(),
 				(vec2.x - margin.x) as i64,
 				(vec2.y - margin.y) as i64,
-				&BlendModes::One,
-				&BlendModes::InvSrcAlpha
-			);
+				&(BlendModes::One, BlendModes::InvSrcAlpha));
 		}
 	}
 
@@ -416,13 +439,24 @@ pub fn create_png(
 	if !output_path.exists() {
 		fs::create_dir_all(output_path.clone())?;
 	}
-	println!("Saving into {}/{}.png...", output_path.as_os_str().to_str().unwrap(), map_id);
-	if let Err(err) = image.save_with_format(
-		format!("{}/{}.png", output_path.as_os_str().to_str().unwrap(), map_id),
-		image::ImageFormat::Png
-	) {
-		println!("Failed to save image: {}", err);
+	if images.keys().len() == 1 {
+		println!("Saving into {}/{}.png...", output_path.as_os_str().to_str().unwrap(), map_id);
+		let path = format!("{}/{}.png", output_path.as_os_str().to_str().unwrap(), map_id);
+		if let Err(err) = images.get(&0).unwrap().save_with_format(path, image::ImageFormat::Png) {
+			eprintln!("Failed to save image: {}", err);
+		}
+		return Ok(());
 	}
+	for (key, image) in images {
+		let x = (key >> 8) as u8;
+		let y = (key & 0xFF) as u8;
+		println!("Saving into {}/{}_{}_{}.png...", output_path.as_os_str().to_str().unwrap(), map_id, x, y);
+		let path = format!("{}/{}_{}_{}.png", output_path.as_os_str().to_str().unwrap(), map_id, x, y);
+		if let Err(err) = image.save_with_format(path, image::ImageFormat::Png) {
+			eprintln!("Failed to save image: {}", err);
+		}
+	}
+
 	Ok(())
 }
 
@@ -445,7 +479,13 @@ pub fn recursive_create_png(
 		let env_path = maps_path.join("env").join(format!("{}.jar", world));
 		let light_path = maps_path.join("light").join(format!("{}.jar", world));
 		let map = Map::load(File::open(map_path)?)?;
-		let light_map = MapLight::load(File::open(light_path)?)?;
+		let light_map_res = MapLight::load(File::open(light_path)?);
+		let light_map =
+			if light_map_res.is_ok() { Some(light_map_res.unwrap()) }
+			else {
+				eprintln!("Error while loading light map, light will not be used for: {}.", world);
+				None
+			};
 		let env = EnvironmentChunk::load(File::open(env_path)?)?;
 		let map_teleporters_id = get_teleporters_id(&env);
 		
@@ -468,7 +508,7 @@ pub fn recursive_create_png(
 		}
 		else {
 			let output_path = PathBuf::from("./output").join(world.to_string());
-			create_png(world, map, &light_map, lib, gfx, env, iem_data, visible_layers, output_path)?;
+			let _ = create_png(world, map, &light_map, lib, gfx, env, iem_data, visible_layers, output_path);
 		}
 		processed_map.push(world);
 		if new_worlds_id.len() > 0 {

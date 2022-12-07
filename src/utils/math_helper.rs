@@ -46,6 +46,10 @@ impl MathHelper {
 		(a << 16) | (b & 0xFFFF)
 	}
 
+	pub fn get_u16_from_two_u8(a: u8, b: u8) -> u16 {
+		(a as u16) << 8 | (b as u16)
+	}
+
 	pub fn fast_floor(value: f32) -> i32 {
 		let v = value as i32;
 		if value >= 0. || v as f32 == value {

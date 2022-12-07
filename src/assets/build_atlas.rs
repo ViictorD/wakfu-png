@@ -1,12 +1,15 @@
+use std::collections::HashMap;
+
 use anyhow::{anyhow, Result};
 use glam::Vec2;
 use image::{RgbaImage, imageops, Rgba};
 use crate::anm::processing::anm_instance::{AnmInstance, SpriteCoord};
 use crate::custom_lib::custom_imageops;
 use crate::custom_lib::custom_imageops::color::BlendModes;
+use crate::utils::math_helper::MathHelper;
 
 pub fn build_atlas(
-	result: &mut RgbaImage,
+	result: &mut HashMap<u16, RgbaImage>,
 	sprite_position: Vec2,
 	atlas: RgbaImage,
 	atlas_2: Option<RgbaImage>,
@@ -312,7 +315,7 @@ pub fn get_result_min_max_coord(coords: &Vec<SpriteCoord>) -> (f32, f32) {
 }
 
 pub fn build_and_tint_altas(
-	result: &mut RgbaImage,
+	result: &mut HashMap<u16, RgbaImage>,
 	position: Vec2,
 	atlas: &RgbaImage,
 	atlas_2: &Option<RgbaImage>,
@@ -422,6 +425,44 @@ pub fn build_and_tint_altas(
 		let (mut final_x, mut final_y) = get_placement_coords(&min_x, &max_y, &final_coord, &sprite_orientation);
 		final_x += position.x as i64;
 		final_y += position.y as i64;
-		custom_imageops::custom_overlay(result, &crop, final_x, final_y, &blend_modes.0, &blend_modes.1);
+
+		overlay_on_result_images(result, crop, final_x, final_y, &blend_modes)
+	}
+}
+
+pub fn overlay_on_result_images(
+	result: &mut HashMap<u16, RgbaImage>,
+	crop: RgbaImage,
+	final_x: i64,
+	final_y: i64,
+	blend_modes: &(BlendModes, BlendModes)
+) {
+	if result.keys().len() == 1 {
+		let img = result.get_mut(&0).unwrap();
+		custom_imageops::custom_overlay(img, &crop, final_x, final_y, &blend_modes.0, &blend_modes.1);
+	}
+	else {
+		// Select the correct tile and overlay on it
+		let tile_x = (final_x / 70_000) as u8;
+		let tile_y = (final_y / 70_000) as u8;
+		let img = result.get_mut(&MathHelper::get_u16_from_two_u8(tile_x, tile_y)).unwrap();
+		custom_imageops::custom_overlay(img, &crop, final_x % 70_000, final_y % 70_000, &blend_modes.0, &blend_modes.1);
+		// If the image is out of bounds, we need to overlay the other tile(s)
+		if final_x % 70_000 + crop.width() as i64 > 70_000 {
+			let removed_width = 70_000 - final_x % 70_000;
+			let img = result.get_mut(&MathHelper::get_u16_from_two_u8(tile_x + 1, tile_y)).unwrap();
+			custom_imageops::custom_overlay(img, &crop, -removed_width, final_y % 70_000, &blend_modes.0, &blend_modes.1);
+		}
+		if final_y % 70_000 + crop.height() as i64 > 70_000 {
+			let removed_height = 70_000 - final_y % 70_000;
+			let img = result.get_mut(&MathHelper::get_u16_from_two_u8(tile_x, tile_y + 1)).unwrap();
+			custom_imageops::custom_overlay(img, &crop, final_x % 70_000, -removed_height, &blend_modes.0, &blend_modes.1);
+		}
+		if final_x % 70_000 + crop.width() as i64 > 70_000 && final_y % 70_000 + crop.height() as i64 > 70_000 {
+			let removed_width = 70_000 - final_x % 70_000;
+			let removed_height = 70_000 - final_y % 70_000;
+			let img = result.get_mut(&MathHelper::get_u16_from_two_u8(tile_x + 1, tile_y + 1)).unwrap();
+			custom_imageops::custom_overlay(img, &crop, -removed_width, -removed_height, &blend_modes.0, &blend_modes.1);
+		}
 	}
 }

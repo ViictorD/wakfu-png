@@ -115,7 +115,14 @@ fn main() -> Result<()> {
 	}
 	else {
 		let map = Map::load(File::open(map_path)?)?;
-		let light_map = MapLight::load(File::open(light_path)?)?;
+		let light_map_res = MapLight::load(File::open(light_path)?);
+		let light_map =
+			if light_map_res.is_ok() { Some(light_map_res.unwrap()) }
+			else {
+				eprintln!("Error while loading light map, light will not be used for: {}.", map_id);
+				None
+			};
+
 		let visible_layers = 
 			if is_indoor { Some(LayerManager::get_outdoor_visible_layers(&map, &groups.unwrap(), &tplg.unwrap())) }
 			else { None };
