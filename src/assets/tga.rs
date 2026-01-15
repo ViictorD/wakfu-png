@@ -170,7 +170,7 @@ impl Color {
 pub struct TgaLoader;
 
 impl TgaLoader {
-	pub fn load(bytes: &[u8]) -> Result<Tga> {
+	pub fn load(bytes: &[u8]) -> Result<Tga<'_>> {
 		let tga: Tga = bytes
 			.read(&mut 0)
 			.map_err(|err| anyhow!("Failed to read TGA: {:?}", err))?;

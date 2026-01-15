@@ -76,7 +76,7 @@ impl ParticleModel {
 
 #[derive(Clone)]
 pub struct ParticleBitmapModel {
-	pub bitmap_id: i32,
+	pub _bitmap_id: i32,
 	pub hot_x: f32,
 	pub hot_y: f32,
 	pub scale_x: f32,
@@ -108,7 +108,7 @@ pub struct ParticleBitmapModel {
 impl ParticleBitmapModel {
 	pub fn load(buffer: &mut ByteBuffer, level_percent: &f32) -> Self {
 		let scale_random_keep_ratio = buffer.read_i8().unwrap() != 0;
-		let bitmap_id = buffer.read_i32().unwrap();
+		let _bitmap_id = buffer.read_i32().unwrap();
 		let hot_x = AttributesReaderWriter::read_float(buffer, level_percent);
 		let hot_y = AttributesReaderWriter::read_float(buffer, level_percent);
 		let scale_x = AttributesReaderWriter::read_float(buffer, level_percent);
@@ -136,7 +136,7 @@ impl ParticleBitmapModel {
 		let rotation_z = AttributesReaderWriter::read_float(buffer, level_percent);
 
 		ParticleBitmapModel {
-			bitmap_id,
+			_bitmap_id,
 			hot_x,
 			hot_y,
 			scale_x,
@@ -179,7 +179,7 @@ pub struct ParticleBitmapSequenceModel {
 impl ParticleBitmapSequenceModel {
 	pub fn load(buffer: &mut ByteBuffer, level_percent: &f32) -> Self {
 		let scale_random_keep_ratio = buffer.read_i8().unwrap() != 0;
-		let bitmap_id = buffer.read_i32().unwrap();
+		let _bitmap_id = buffer.read_i32().unwrap();
 		let hot_x = AttributesReaderWriter::read_float(buffer, level_percent);
 		let hot_y = AttributesReaderWriter::read_float(buffer, level_percent);
 		let scale_x = AttributesReaderWriter::read_float(buffer, level_percent);
@@ -207,7 +207,7 @@ impl ParticleBitmapSequenceModel {
 		let current_time = 0.;
 
 		let particle_bitmap_model = ParticleBitmapModel {
-			bitmap_id,
+			_bitmap_id,
 			hot_x,
 			hot_y,
 			scale_x,

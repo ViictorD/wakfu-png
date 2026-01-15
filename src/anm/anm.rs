@@ -11,14 +11,14 @@ use super::{
 
 pub struct AnimHeader {
 	pub version_number: i8,
-	pub frame_rate: i8
+	pub _frame_rate: i8
 }
 
 impl Default for AnimHeader {
 	fn default() -> Self {
 		AnimHeader {
 			version_number: 0,
-			frame_rate: 0
+			_frame_rate: 0
 		}
 	}
 }
@@ -27,11 +27,11 @@ impl AnimHeader {
 	pub fn read(buffer: &mut ByteBuffer) -> Result<Self> {
 		let version_number = buffer.read_i8()?;
 		buffer.read_i16()?;
-		let frame_rate = buffer.read_i8()?;
+		let _frame_rate = buffer.read_i8()?;
 
 		let result = AnimHeader {
 			version_number,
-			frame_rate
+			_frame_rate
 		};
 		Ok(result)
 	}
@@ -116,13 +116,13 @@ impl AnmAnimationFileRecord {
 
 pub struct AnimIndex {
 	pub flags: i8,
-	pub scale: f32,
-	pub render_radius: f32,
+	pub _scale: f32,
+	pub _render_radius: f32,
 	pub file_names: Vec<String>,
-	pub part_hidden_by_item: Vec<HiddingPart>,
-	pub can_hide_part_item: Vec<CanHidePart>,
-	pub extend: AnmIndexExtend,
-	pub animation_file_records: Vec<AnmAnimationFileRecord>,
+	pub _part_hidden_by_item: Vec<HiddingPart>,
+	pub _can_hide_part_item: Vec<CanHidePart>,
+	pub _extend: AnmIndexExtend,
+	pub _animation_file_records: Vec<AnmAnimationFileRecord>,
 	pub animation_file_records_by_name: HashMap<String, AnmAnimationFileRecord>
 }
 
@@ -130,13 +130,13 @@ impl Default for AnimIndex {
 	fn default() -> Self {
 		AnimIndex {
 			flags: 0,
-			scale: 0.,
-			render_radius: 0.,
+			_scale: 0.,
+			_render_radius: 0.,
 			file_names: Vec::new(),
-			part_hidden_by_item: Vec::new(),
-			can_hide_part_item: Vec::new(),
-			extend: AnmIndexExtend::default(),
-			animation_file_records: Vec::new(),
+			_part_hidden_by_item: Vec::new(),
+			_can_hide_part_item: Vec::new(),
+			_extend: AnmIndexExtend::default(),
+			_animation_file_records: Vec::new(),
 			animation_file_records_by_name: HashMap::new()
 		}
 	}
@@ -145,10 +145,10 @@ impl Default for AnimIndex {
 impl AnimIndex {
 	pub fn read(buffer: &mut ByteBuffer) -> Result<Self> {
 		let flags = buffer.read_i8()?;
-		let scale = 
+		let _scale = 
 			if (flags & 0x1) != 0x0 { buffer.read_f32()? }
 			else { 0. };
-		let render_radius =
+		let _render_radius =
 			if (flags & 0x8) != 0x0 { buffer.read_f32()? }
 			else { 0. };
 
@@ -161,55 +161,55 @@ impl AnimIndex {
 			}
 		}
 
-		let mut part_hidden_by_item = Vec::new();
+		let mut _part_hidden_by_item = Vec::new();
 		if (flags & 0x4) != 0x0 {
 			let num_part: i8 = buffer.read_i8()?;
 			for _ in 0..num_part {
 				let _crc_key: i32 = buffer.read_i32()?;
 				let _crc_to_hide = buffer.read_i32()?;
-				part_hidden_by_item.push(HiddingPart {
+				_part_hidden_by_item.push(HiddingPart {
 					_crc_key,
 					_crc_to_hide
 				});
 			}
 		}
 
-		let mut can_hide_part_item = Vec::new();
+		let mut _can_hide_part_item = Vec::new();
 		if (flags & 0x40) != 0x0 {
 			let num_part: i8 = buffer.read_i8()?;
 			for _ in 0..num_part {
 				let _item_name = read_string_without_len(buffer)?;
 				let crc_key2 = buffer.read_i32()?;
-				can_hide_part_item.push(CanHidePart {
+				_can_hide_part_item.push(CanHidePart {
 					_item_name,
 					_crc_key: crc_key2
 				});
 			}
 		}
 
-		let extend =
+		let _extend =
 			if (flags as u8 & 0x80) != 0x0 { AnmIndexExtend::read(buffer)? }
 			else { AnmIndexExtend::default() };
 
 		
 		let num_animation_file_records = buffer.read_i16()?;
-		let mut animation_file_records = Vec::with_capacity(num_animation_file_records as usize);
+		let mut _animation_file_records = Vec::with_capacity(num_animation_file_records as usize);
 		let mut animation_file_records_by_name = HashMap::with_capacity(num_animation_file_records as usize);
 		for _ in 0..num_animation_file_records {
 			let file_record = AnmAnimationFileRecord::read(buffer)?;
 			animation_file_records_by_name.insert(file_record.name.clone(), file_record.clone());
-			animation_file_records.push(file_record);
+			_animation_file_records.push(file_record);
 		}
 
 		let result = AnimIndex {
 			flags,
-			scale,
-			render_radius,
+			_scale,
+			_render_radius,
 			file_names,
-			part_hidden_by_item,
-			can_hide_part_item,
-			extend,
-			animation_file_records,
+			_part_hidden_by_item,
+			_can_hide_part_item,
+			_extend,
+			_animation_file_records,
 			animation_file_records_by_name
 		};
 		Ok(result)
@@ -245,7 +245,7 @@ impl AnimIndex {
 
 pub struct AnmShapeDefinition {
 	pub id: i16,
-	pub texture_index: i16,
+	pub _texture_index: i16,
 	pub top: f32,
 	pub left: f32,
 	pub bottom: f32,
@@ -259,7 +259,7 @@ pub struct AnmShapeDefinition {
 impl AnmShapeDefinition {
 	pub fn read(buffer: &mut ByteBuffer) -> Result<Self> {
 		let id = buffer.read_i16()?;
-		let texture_index = buffer.read_i16()?;
+		let _texture_index = buffer.read_i16()?;
 		let top = (buffer.read_i16()? as f32) / 65535.;
 		let left = (buffer.read_i16()? as f32) / 65535.;
 		let bottom = (buffer.read_i16()? as f32) / 65535.;
@@ -271,7 +271,7 @@ impl AnmShapeDefinition {
 		
 		let result = AnmShapeDefinition {
 			id,
-			texture_index,
+			_texture_index,
 			top,
 			left,
 			bottom,

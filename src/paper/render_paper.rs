@@ -12,8 +12,8 @@ pub struct RenderPaperData {
 	pub atlas_2: Option<RgbaImage>,
 	pub anm_instance: AnmInstance,
 	pub id: i32,
-	pub start_coords: Vec2,
-	pub end_coords: Vec2,
+	pub _start_coords: Vec2,
+	pub _end_coords: Vec2,
 }
 
 pub fn render_papers(papers: Paper, data: HashMap<i32, Vec<RenderPaperData>>) {

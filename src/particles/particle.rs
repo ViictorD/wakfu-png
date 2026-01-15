@@ -39,7 +39,7 @@ pub struct Particle {
 	pub texture_right: f32,
 	pub model: Option<ParticleModel>,
 	pub parent: Option<*const Particle>,
-	pub source_emitter: Option<Emitter>,
+	pub _source_emitter: Option<Emitter>,
 	pub geocentric: bool,
 	pub emitters: Vec<Emitter>
 }
@@ -84,7 +84,7 @@ impl Particle {
 			texture_right: 0.,
 			model: None,
 			parent: None,
-			source_emitter: None,
+			_source_emitter: None,
 			geocentric: false,
 			emitters: Vec::new()
 		}

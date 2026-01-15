@@ -5,23 +5,23 @@ use itertools::Itertools;
 
 #[derive(Debug, Default)]
 pub struct Frames {
-	pub total_time: u32,
-	pub frame_times: Vec<u16>,
+	pub _total_time: u32,
+	pub _frame_times: Vec<u16>,
 	pub frame_rects: Vec<Rect>,
 }
 
 impl Frames {
-	pub fn new(total_time: u32, frame_durations: &[u16], frame_coords: Vec<Rect>) -> Self {
-		let mut frame_times = Vec::with_capacity(frame_durations.len());
-		let mut frame_time = 0;
+	pub fn new(_total_time: u32, frame_durations: &[u16], frame_coords: Vec<Rect>) -> Self {
+		let mut _frame_times = Vec::with_capacity(frame_durations.len());
+		let mut _frame_time = 0;
 		for dur in frame_durations {
-			frame_times.push(frame_time);
-			frame_time += dur;
+			_frame_times.push(_frame_time);
+			_frame_time += dur;
 		}
 
 		Self {
-			total_time,
-			frame_times,
+			_total_time,
+			_frame_times,
 			frame_rects: frame_coords,
 		}
 	}

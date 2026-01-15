@@ -36,11 +36,11 @@ pub struct ParticleDef {
 	pub coord: ElementCoord,
 	pub system_id: i32,
 	pub level: i8,
-	pub unknown: f32,
+	pub _unknown: f32,
 	pub offset_x: i8,
 	pub offset_y: i8,
 	pub offset_z: i8,
-	pub lod: i8
+	pub _lod: i8
 }
 
 impl<'a> TryRead<'a> for ParticleDef {
@@ -51,21 +51,21 @@ impl<'a> TryRead<'a> for ParticleDef {
 		let system_id: i32 = bytes.read(offset)?;
 
 		let level: i8 = bytes.read(offset)?;
-		let unknown: f32 = bytes.read(offset)?;
+		let _unknown: f32 = bytes.read(offset)?;
 		let offset_x: i8 = bytes.read(offset)?;
 		let offset_y: i8 = bytes.read(offset)?;
 		let offset_z: i8 = bytes.read(offset)?;
-		let lod: i8 = bytes.read(offset)?;
+		let _lod: i8 = bytes.read(offset)?;
 
 		let result = ParticleDef {
 			coord,
 			system_id,
 			level,
-			unknown,
+			_unknown,
 			offset_x,
 			offset_y,
 			offset_z,
-			lod
+			_lod
 		};
 
 		Ok((result, *offset))
@@ -147,18 +147,18 @@ impl InteractiveElementData {
 
 #[derive(Debug)]
 pub struct InteractiveElement {
-	pub id: i64,
+	pub _id: i64,
 	pub interactive_type: i16,
 	pub views: Vec<i32>,
 	pub data: InteractiveElementData,
-	pub client_only: u8,
-	pub land_mark_type: i16
+	pub _client_only: u8,
+	pub _land_mark_type: i16
 }
 
 impl<'a> TryRead<'a> for InteractiveElement {
 	fn try_read(bytes: &'a [u8], _ctx: ()) -> byte::Result<(Self, usize)> {
 		let offset = &mut 0;
-		let id: i64 = bytes.read(offset)?;
+		let _id: i64 = bytes.read(offset)?;
 		let interactive_type: i16 = bytes.read(offset)?;
 		let num_view: u8 = bytes.read(offset)?;
 		let views: Vec<i32> = bytes
@@ -174,16 +174,16 @@ impl<'a> TryRead<'a> for InteractiveElement {
 			ByteBuffer::from_vec(data_bytes),
 			0
 		).unwrap();
-		let client_only: u8 = bytes.read(offset)?;
-		let land_mark_type: i16 = bytes.read(offset)?;
+		let _client_only: u8 = bytes.read(offset)?;
+		let _land_mark_type: i16 = bytes.read(offset)?;
 
 		let result = InteractiveElement {
-			id,
+			_id,
 			interactive_type,
 			views,
 			data,
-			client_only,
-			land_mark_type
+			_client_only,
+			_land_mark_type
 		};
 
 		Ok((result, *offset))
@@ -193,14 +193,14 @@ impl<'a> TryRead<'a> for InteractiveElement {
 #[derive(Debug)]
 pub struct DynamicElementDef {
 	pub coord: ElementCoord,
-	pub id: i32,
+	pub _id: i32,
 	pub gfx_id: i32,
 	pub dynamic_type: i16,
 	pub direction: i8,
-	pub occluder: i8,
-	pub height: i8,
+	pub _occluder: i8,
+	pub _height: i8,
 	pub base_animation: String,
-	pub params: String
+	pub _params: String
 }
 
 impl<'a> TryRead<'a> for DynamicElementDef {
@@ -209,26 +209,26 @@ impl<'a> TryRead<'a> for DynamicElementDef {
 		
 		let coord: ElementCoord = bytes.read(offset)?;
 
-		let id: i32 = bytes.read(offset)?;
+		let _id: i32 = bytes.read(offset)?;
 		let gfx_id: i32 = bytes.read(offset)?;
 		let dynamic_type: i16 = bytes.read(offset)?;
 		let direction: i8 = bytes.read(offset)?;
-		let occluder: i8 = bytes.read(offset)?;
-		let height: i8 = bytes.read(offset)?;
+		let _occluder: i8 = bytes.read(offset)?;
+		let _height: i8 = bytes.read(offset)?;
 
 		let base_animation: String = String::from_str(bytes.read_with(offset, Str::Delimiter(0))?).unwrap();
-		let params: String = String::from_str(bytes.read_with(offset, Str::Delimiter(0))?).unwrap();
+		let _params: String = String::from_str(bytes.read_with(offset, Str::Delimiter(0))?).unwrap();
 
 		let result = DynamicElementDef {
 			coord,
-			id,
+			_id,
 			gfx_id,
 			dynamic_type,
 			direction,
-			occluder,
-			height,
+			_occluder,
+			_height,
 			base_animation,
-			params
+			_params
 		};
 
 		Ok((result, *offset))
