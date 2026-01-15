@@ -81,10 +81,11 @@ impl Gfx {
 						let mut result = image.sub_image(
 							0,
 							0,
-							element.img_width as u32,
-							element.img_height as u32
+							if element.render_width <= tgam.width() as u16 { element.render_width as u32 } else { tgam.width() },
+							if element.render_height <= tgam.height() as u16 { element.render_height as u32 } else { tgam.height() },
 						)
 						.to_image();
+						result = imageops::resize(&result, element.img_width as u32, element.img_height as u32, imageops::FilterType::Nearest);
 						if element.flags.is_flip() {
 							imageops::flip_horizontal_in_place(&mut result);
 						}
