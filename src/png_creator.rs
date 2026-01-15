@@ -379,7 +379,7 @@ pub fn create_png(
 			let mut particle_system = ParticleSystem::new();
 			particle_system.load(loaded_particles);
 			particle_system.register_all_base_emitters();
-		
+
 			// We simulate 5s of rendering, to get a well rendered result
 			const TIME_INCREMENT: f32 = 0.0066;
 			let mut life = 0.;

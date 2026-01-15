@@ -15,6 +15,8 @@ pub struct MapElement {
 	pub origin_y: i16,
 	pub img_width: u16,
 	pub img_height: u16,
+	pub render_width: u16,
+	pub render_height: u16,
 	pub texture_id: i32,
 	pub flags: ElementFlags,
 	pub visual_height: u8,
@@ -27,22 +29,9 @@ pub struct MapElement {
 
 impl MapElement {
 	#[inline]
-	pub fn image_size(&self) -> Vec2 {
-		Vec2::new(self.img_width as f32, self.img_height as f32)
-	}
-
-	pub fn size(&self) -> Vec2 {
-		match self.animation {
-			None => self.image_size(),
-			Some(ref frames) => Vec2::new(frames.frame_rects[0].width as f32, frames.frame_rects[0].height as f32),
-		}
-	}
-
-	#[inline]
 	pub fn origin(&self) -> Vec2 {
 		Vec2::new(self.origin_x as f32, self.origin_y as f32)
 	}
-
 }
 
 impl<'a> TryRead<'a> for MapElement {
@@ -54,6 +43,8 @@ impl<'a> TryRead<'a> for MapElement {
 		let origin_y: i16 = bytes.read(offset)?;
 		let img_width: u16 = bytes.read(offset)?;
 		let img_height: u16 = bytes.read(offset)?;
+		let render_width: u16 = bytes.read(offset)?;
+		let render_height: u16 = bytes.read(offset)?;
 		let texture_id: i32 = bytes.read(offset)?;
 		let flags: ElementFlags = bytes.read(offset)?;
 		let visual_height: u8 = bytes.read(offset)?;
@@ -74,6 +65,8 @@ impl<'a> TryRead<'a> for MapElement {
 			origin_y,
 			img_width,
 			img_height,
+			render_width,
+			render_height,
 			texture_id,
 			flags,
 			visual_height,

@@ -7,7 +7,7 @@ use itertools::Itertools;
 pub struct Frames {
 	pub _total_time: u32,
 	pub _frame_times: Vec<u16>,
-	pub frame_rects: Vec<Rect>,
+	pub _frame_rects: Vec<Rect>,
 }
 
 impl Frames {
@@ -22,7 +22,7 @@ impl Frames {
 		Self {
 			_total_time,
 			_frame_times,
-			frame_rects: frame_coords,
+			_frame_rects: frame_coords,
 		}
 	}
 }
