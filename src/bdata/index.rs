@@ -21,24 +21,24 @@ impl Hash for Unique {
 	}
 }
 
-#[derive(Debug)]
-struct Multi {
-	indexes: HashMap<i64, Vec<i32>>
-}
-
-impl Hash for Multi {
-	fn load(count: i32) -> Result<Self> {
-		let indexes: HashMap<i64, Vec<i32>> = HashMap::with_capacity(count as usize);
-		let result = Multi {
-			indexes
-		};
-		Ok(result)
-	}
-
-	fn read_entry(&mut self, idx: i64, buffer: &mut RandomByteBufferReader) {
-		self.indexes.insert(idx, buffer.read_int_array());
-	}
-}
+// #[derive(Debug)]
+// struct Multi {
+// 	indexes: HashMap<i64, Vec<i32>>
+// }
+//
+// impl Hash for Multi {
+// 	fn load(count: i32) -> Result<Self> {
+// 		let indexes: HashMap<i64, Vec<i32>> = HashMap::with_capacity(count as usize);
+// 		let result = Multi {
+// 			indexes
+// 		};
+// 		Ok(result)
+// 	}
+//
+// 	fn read_entry(&mut self, idx: i64, buffer: &mut RandomByteBufferReader) {
+// 		self.indexes.insert(idx, buffer.read_int_array());
+// 	}
+// }
 
 pub struct Index {
 	name: String,

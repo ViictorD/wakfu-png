@@ -7,16 +7,16 @@ use crate::map::iso_to_screen;
 pub struct AnmSprite {
 	pub gfx_id: i32,
 	pub direction: i8,
-	pub activation_pattern: i16,
+	pub _activation_pattern: i16,
 	pub state: i16
 }
 
 impl AnmSprite {
-	pub fn new(gfx_id: i32, direction: i8, activation_pattern: i16, state: i16) -> Self {
+	pub fn new(gfx_id: i32, direction: i8, _activation_pattern: i16, state: i16) -> Self {
 		AnmSprite {
 			gfx_id,
 			direction,
-			activation_pattern,
+			_activation_pattern,
 			state
 		}
 	}
@@ -85,7 +85,7 @@ pub struct MapSprite {
 	pub cell_z: i16,
 	pub height: i8,
 	pub altitude_order: u8,
-	pub tag: u8,
+	pub _tag: u8,
 	pub element_id: i32,
 	pub group_key: i32,
 	pub group_id: i32,

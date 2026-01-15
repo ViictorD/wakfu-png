@@ -8,14 +8,14 @@ use super::color::Color;
 
 #[derive(Debug)]
 pub struct MapChunk {
-	pub map_x: i32,
-	pub map_y: i32,
-	pub min_x: i32,
-	pub min_y: i32,
-	pub min_z: i16,
-	pub max_x: i32,
-	pub max_y: i32,
-	pub max_z: i16,
+	pub _map_x: i32,
+	pub _map_y: i32,
+	pub _min_x: i32,
+	pub _min_y: i32,
+	pub _min_z: i16,
+	pub _max_x: i32,
+	pub _max_y: i32,
+	pub _max_z: i16,
 	pub sprites: Vec<MapSprite>,
 }
 
@@ -30,12 +30,12 @@ impl<'a> TryRead<'a> for MapChunk {
 	fn try_read(bytes: &'a [u8], _ctx: ()) -> byte::Result<(Self, usize)> {
 		let offset = &mut 0;
 
-		let min_x: i32 = bytes.read(offset)?;
-		let min_y: i32 = bytes.read(offset)?;
-		let min_z: i16 = bytes.read(offset)?;
-		let max_x: i32 = bytes.read(offset)?;
-		let max_y: i32 = bytes.read(offset)?;
-		let max_z: i16 = bytes.read(offset)?;
+		let _min_x: i32 = bytes.read(offset)?;
+		let _min_y: i32 = bytes.read(offset)?;
+		let _min_z: i16 = bytes.read(offset)?;
+		let _max_x: i32 = bytes.read(offset)?;
+		let _max_y: i32 = bytes.read(offset)?;
+		let _max_z: i16 = bytes.read(offset)?;
 		let count: u16 = bytes.read(offset)?;
 		let mut group_keys: Vec<i32> = Vec::with_capacity(count as usize);
 		let mut layer_indexes: Vec<u8> = Vec::with_capacity(count as usize);
@@ -47,16 +47,16 @@ impl<'a> TryRead<'a> for MapChunk {
 			group_ids.push(bytes.read(offset)?);
 		}
 		let colors: Colors = bytes.read(offset)?;
-		let map_x: i32 = bytes.read(offset)?;
-		let map_y: i32 = bytes.read(offset)?;
+		let _map_x: i32 = bytes.read(offset)?;
+		let _map_y: i32 = bytes.read(offset)?;
 		let rects: u16 = bytes.read(offset)?;
 		let mut sprites: Vec<MapSprite> = Vec::with_capacity(rects as usize * 2);
 
 		for _ in 0..rects {
-			let rect_min_x = map_x + bytes.read::<u8>(offset)? as i32;
-			let rect_max_x = map_x + bytes.read::<u8>(offset)? as i32;
-			let rect_min_y = map_y + bytes.read::<u8>(offset)? as i32;
-			let rect_max_y = map_y + bytes.read::<u8>(offset)? as i32;
+			let rect_min_x = _map_x + bytes.read::<u8>(offset)? as i32;
+			let rect_max_x = _map_x + bytes.read::<u8>(offset)? as i32;
+			let rect_min_y = _map_y + bytes.read::<u8>(offset)? as i32;
+			let rect_max_y = _map_y + bytes.read::<u8>(offset)? as i32;
 
 			for cell_x in rect_min_x..rect_max_x {
 				for cell_y in rect_min_y..rect_max_y {
@@ -65,7 +65,7 @@ impl<'a> TryRead<'a> for MapChunk {
 						let cell_z = bytes.read(offset)?;
 						let height = bytes.read(offset)?;
 						let altitude_order = bytes.read(offset)?;
-						let tag = bytes.read(offset)?;
+						let _tag = bytes.read(offset)?;
 						let element_id = bytes.read(offset)?;
 						let group_idx: u16 = bytes.read(offset)?;
 						let group_key = group_keys[group_idx as usize];
@@ -82,7 +82,7 @@ impl<'a> TryRead<'a> for MapChunk {
 							cell_z,
 							height,
 							altitude_order,
-							tag,
+							_tag,
 							element_id,
 							group_key,
 							group_id,
@@ -98,14 +98,14 @@ impl<'a> TryRead<'a> for MapChunk {
 			}
 		}
 		let chunk = MapChunk {
-			map_x,
-			map_y,
-			min_x,
-			min_y,
-			min_z,
-			max_x,
-			max_y,
-			max_z,
+			_map_x,
+			_map_y,
+			_min_x,
+			_min_y,
+			_min_z,
+			_max_x,
+			_max_y,
+			_max_z,
 			sprites,
 		};
 		Ok((chunk, *offset))

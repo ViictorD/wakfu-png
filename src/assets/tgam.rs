@@ -79,7 +79,7 @@ pub struct AlphaMask<'a> {
 pub struct TgamLoader;
 
 impl TgamLoader {
-	pub fn load(bytes: &[u8]) -> Result<Tgam> {
+	pub fn load(bytes: &[u8]) -> Result<Tgam<'_>> {
 		let tgam: Tgam = bytes
 			.read(&mut 0)
 			.map_err(|err| anyhow!("Failed to read TGAM: {:?}", err))?;

@@ -9,13 +9,13 @@ use super::{
 
 pub struct ParticleSystemLoader {
 	pub geocentric: bool,
-	pub behind_mobile: bool,
-	pub must_apply_night_color: bool,
+	pub _behind_mobile: bool,
+	pub _must_apply_night_color: bool,
 	pub src_blend: i32,
 	pub dst_blend: i32,
 	pub texture_id: i64,
-	pub duration: i32,
-	pub render_radius: i8,
+	pub _duration: i32,
+	pub _render_radius: i8,
 	pub emitters: Vec<EmitterDefinition>
 }
 
@@ -29,17 +29,17 @@ impl ParticleSystemLoader {
 		}
 
 		let geocentric = buffer.read_i8().unwrap() != 0;
-		let behind_mobile = buffer.read_i8().unwrap() != 0;
-		let must_apply_night_color = buffer.read_i8().unwrap() != 0;
+		let _behind_mobile = buffer.read_i8().unwrap() != 0;
+		let _must_apply_night_color = buffer.read_i8().unwrap() != 0;
 		let src_blend = buffer.read_i32().unwrap();
 		let dst_blend = buffer.read_i32().unwrap();
 		if src_blend != 1 || dst_blend != 771 {
 			panic!("Blending mode not implemented");
 		}
 		let texture_id = buffer.read_i64().unwrap();
-		let duration = AttributesReaderWriter::read_unsigned_short(&mut buffer, &(level as f32));
+		let _duration = AttributesReaderWriter::read_unsigned_short(&mut buffer, &(level as f32));
 		
-		let render_radius = buffer.read_i8().unwrap();
+		let _render_radius = buffer.read_i8().unwrap();
 
 		let emitter_count = buffer.read_i8()?;
 		let mut emitters = Vec::with_capacity(emitter_count as usize);
@@ -52,13 +52,13 @@ impl ParticleSystemLoader {
 
 		let result = ParticleSystemLoader {
 			geocentric,
-			behind_mobile,
-			must_apply_night_color,
+			_behind_mobile,
+			_must_apply_night_color,
 			src_blend,
 			dst_blend,
 			texture_id,
-			duration,
-			render_radius,
+			_duration,
+			_render_radius,
 			emitters
 		};
 

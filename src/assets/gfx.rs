@@ -217,8 +217,8 @@ impl Gfx {
 					atlas_2,
 					anm_instance: anm_instace,
 					id: coord.id,
-					start_coords: Vec2::new(coord.start_x as f32, coord.start_y as f32),
-					end_coords: Vec2::new(coord.end_x as f32, coord.end_y as f32),
+					_start_coords: Vec2::new(coord.start_x as f32, coord.start_y as f32),
+					_end_coords: Vec2::new(coord.end_x as f32, coord.end_y as f32),
 				};
 				result.get_mut(id).unwrap().push(paper_data);
 			}

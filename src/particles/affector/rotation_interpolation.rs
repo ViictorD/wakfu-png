@@ -5,20 +5,20 @@ use crate::{particles::{attributes_reader_writer::AttributesReaderWriter}, parti
 #[derive(Clone)]
 pub struct RotationInterpolation {
 	pub angle_x: f32,
-	pub angle_y: f32,
-	pub angle_z: f32
+	pub _angle_y: f32,
+	pub _angle_z: f32
 }
 
 impl RotationInterpolation {
 	pub fn load(buffer: &mut ByteBuffer, level_percent: &f32) -> Self {
 		let angle_x = AttributesReaderWriter::read_float(buffer, level_percent);
-		let angle_y = AttributesReaderWriter::read_float(buffer, level_percent);
-		let angle_z = AttributesReaderWriter::read_float(buffer, level_percent);
+		let _angle_y = AttributesReaderWriter::read_float(buffer, level_percent);
+		let _angle_z = AttributesReaderWriter::read_float(buffer, level_percent);
 
 		RotationInterpolation {
 			angle_x,
-			angle_y,
-			angle_z
+			_angle_y,
+			_angle_z
 		}
 	}
 

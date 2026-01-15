@@ -5,6 +5,7 @@ use bytebuffer::ByteBuffer;
 use glam::Vec3;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum BinarSerialPartsEnum {
 	GlobalDataPart(GlobalDataPart),
 	SpecificDataPart(SpecificDataPart),
@@ -49,43 +50,43 @@ impl BinarSerialPartsTrait for GlobalDataPart {
 
 #[derive(Debug)]
 pub struct SpecificDataPart {
-	pub world: i16,
+	pub _world: i16,
 	pub x: i32,
 	pub y: i32,
 	pub z: i16,
 	pub state: i16,
 	pub visible: bool,
-	pub usable: bool,
+	pub _usable: bool,
 	pub direction: i8,
 	pub activation_pattern: i16,
-	pub positions_trigger: Vec<Vec3>,
+	pub _positions_trigger: Vec<Vec3>,
 	pub parameter: String,
-	pub properties: Vec<String>
+	pub _properties: Vec<String>
 }
 
 impl BinarSerialPartsTrait for SpecificDataPart {
 	fn unserialize(mut buffer: ByteBuffer, _version: i32) -> Self {
-		let world: i16 = buffer.read_i16().unwrap();
+		let _world: i16 = buffer.read_i16().unwrap();
 		let x = buffer.read_i32().unwrap();
 		let y = buffer.read_i32().unwrap();
 		let z = buffer.read_i16().unwrap();
 		let state = buffer.read_i16().unwrap();
 
 		let visible = buffer.read_i8().unwrap() != 0;
-		let usable = buffer.read_i8().unwrap() != 0;
+		let _usable = buffer.read_i8().unwrap() != 0;
 		let direction = buffer.read_i8().unwrap();
 
 		let activation_pattern = buffer.read_i16().unwrap();
 		
 		let number_of_position_trigger = buffer.read_i16().unwrap();
-		let mut positions_trigger = Vec::with_capacity(number_of_position_trigger as usize * size_of::<Vec3>());
+		let mut _positions_trigger = Vec::with_capacity(number_of_position_trigger as usize * size_of::<Vec3>());
 		for _ in 0..number_of_position_trigger {
 			let pos = Vec3::new(
 				buffer.read_i32().unwrap() as f32, 
 				buffer.read_i32().unwrap() as f32,
 				buffer.read_i16().unwrap() as f32
 			);
-			positions_trigger.push(pos);
+			_positions_trigger.push(pos);
 		}
 
 		let size = buffer.read_i16().unwrap() as usize;
@@ -93,30 +94,30 @@ impl BinarSerialPartsTrait for SpecificDataPart {
 		let parameter = String::from_utf8(parameters).unwrap();
 
 		let properties_count: i8 = buffer.read_i8().unwrap();
-		let mut properties: Vec<String>= Vec::with_capacity(properties_count as usize);
+		let mut _properties: Vec<String>= Vec::with_capacity(properties_count as usize);
 		if properties_count > 0 {
 			for _ in 0..properties_count {
 				let prop_id = buffer.read_i8().unwrap();
 				let prop = 
 					if prop_id == 0 { String::from_str("Element de Challenge").unwrap() }
 					else { String::from_str("Element d'almanach ").unwrap() };
-				properties.push(prop);
+				_properties.push(prop);
 			}
 		}
 		buffer.read_i32().unwrap();
 		SpecificDataPart {
-			world,
+			_world,
 			x,
 			y,
 			z,
 			state,
 			visible,
-			usable,
+			_usable,
 			direction,
 			activation_pattern,
-			positions_trigger,
+			_positions_trigger,
 			parameter,
-			properties
+			_properties
 		}
 	}
 }

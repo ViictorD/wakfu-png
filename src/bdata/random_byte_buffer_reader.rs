@@ -68,14 +68,14 @@ impl RandomByteBufferReader {
 		String::from_utf8(str_bytes).unwrap()
 	}
 
-	pub fn read_int_array(&mut self) -> Vec<i32>{
-		let size: i32 = self.get_int();
-		let mut data: Vec<i32> = Vec::with_capacity(size as usize);
-
-		for _ in 0..size {
-			data.push(self.get_int())
-		}
-		return data;
-	}
+	// pub fn read_int_array(&mut self) -> Vec<i32>{
+	// 	let size: i32 = self.get_int();
+	// 	let mut data: Vec<i32> = Vec::with_capacity(size as usize);
+	//
+	// 	for _ in 0..size {
+	// 		data.push(self.get_int())
+	// 	}
+	// 	return data;
+	// }
 
 }
